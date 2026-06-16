@@ -1,259 +1,595 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useTheme } from 'next-themes';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { logout } from '../store/authSlice';
-import { 
-  Briefcase, 
-  Search, 
-  Sun, 
-  Moon, 
-  Menu, 
-  X, 
-  LogOut, 
-  User, 
-  ChevronDown 
+import {
+  Briefcase,
+  Search,
+  Sun,
+  Moon,
+  Menu,
+  X,
+  LogOut,
+  User,
+  ChevronDown,
+  Bell,
+  Settings,
+  Rss,
+  Users,
+  BookOpen,
 } from 'lucide-react';
 
+const NAV_LINKS = [
+  { name: 'Feed',      href: '/',          icon: Rss },
+  { name: 'Directory', href: '/directory', icon: Users },
+  { name: 'Jobs',      href: '/jobs',      icon: BookOpen },
+  { name: 'Profile',   href: '/profile',   icon: User },
+];
+
+function getInitials(name?: string): string {
+  if (!name) return 'CH';
+  return name
+    .split(' ')
+    .map((n) => n[0])
+    .slice(0, 2)
+    .join('')
+    .toUpperCase();
+}
+
 export default function Navbar() {
-  const { user } = useAppSelector((state) => state.auth);
-  const dispatch = useAppDispatch();
-  const router = useRouter();
-  const pathname = usePathname();
-  const { theme, setTheme } = useTheme();
-  
-  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const { user }     = useAppSelector((state) => state.auth);
+  const dispatch     = useAppDispatch();
+  const router       = useRouter();
+  const pathname     = usePathname();
+  const { setTheme, resolvedTheme } = useTheme();
+
+  const [dropdownOpen,   setDropdownOpen]   = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [mounted,        setMounted]        = useState(false);
+  const [searchFocused,  setSearchFocused]  = useState(false);
+
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => { setMounted(true); }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  useEffect(() => { setMobileMenuOpen(false); }, [pathname]);
 
   const handleLogout = () => {
+    setDropdownOpen(false);
+    setMobileMenuOpen(false);
     dispatch(logout());
     router.push('/login');
   };
 
-  const navLinks = [
-    { name: 'Feed', href: '/' },
-    { name: 'Directory', href: '/directory' },
-    { name: 'Jobs', href: '/jobs' },
-    { name: 'Profile', href: '/profile' }
-  ];
+  const toggleTheme = () => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark');
 
-  // Quick helper for initials if avatar is not present
-  const getInitials = (name: string) => {
-    if (!name) return 'CH';
-    return name
-      .split(' ')
-      .map((n) => n[0])
-      .slice(0, 2)
-      .join('')
-      .toUpperCase();
-  };
-
-  // Hide Navbar on authentication routes
   const isAuthPage = pathname === '/login' || pathname === '/register';
   if (isAuthPage) return null;
 
+  const isDark = mounted ? resolvedTheme === 'dark' : true;
+
   return (
-    <nav className="sticky top-0 z-40 w-full bg-[#101415]/75 dark:bg-[#101415]/75 backdrop-blur-xl border-b border-white/10 shadow-lg">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
-          
-          {/* Left: Brand Identity */}
-          <div className="flex items-center gap-6">
-            <Link href="/" className="flex items-center gap-2 group">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-400 to-violet-600 flex items-center justify-center shadow-[0_4px_12px_rgba(99,102,241,0.3)] transition-transform group-hover:scale-105 duration-200">
-                <Briefcase className="w-4.5 h-4.5 text-white" />
-              </div>
-              <span className="text-xl font-extrabold tracking-tight bg-gradient-to-r from-indigo-200 to-white bg-clip-text text-transparent">
-                CareerHub
-              </span>
-            </Link>
+    <>
+      <nav
+        id="main-navbar"
+        className="sticky top-0 z-40 w-full"
+        style={{
+          background: 'rgba(16, 20, 21, 0.75)',
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)',
+          borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+          boxShadow: '0 1px 40px rgba(0,0,0,0.35)',
+        }}
+      >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16 gap-4">
 
-            {/* Search Bar - Desktop */}
-            <div className="hidden md:flex relative group w-64 lg:w-80">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40 pointer-events-none group-focus-within:text-indigo-400 transition-colors" />
-              <input 
-                type="text" 
-                placeholder="Search professionals, jobs..." 
-                className="w-full pl-9 pr-4 py-1.8 bg-white/[0.06] border border-white/10 rounded-full text-white text-[0.875rem] placeholder-white/30 outline-none transition-all duration-200 focus:border-indigo-500/50 focus:bg-indigo-950/20"
-              />
-            </div>
-          </div>
-
-          {/* Center: Desktop Nav Links */}
-          <div className="hidden md:flex items-center gap-1">
-            {navLinks.map((link) => {
-              const isActive = pathname === link.href;
-              return (
-                <Link
-                  key={link.name}
-                  href={link.href}
-                  className={`px-4 py-2 rounded-xl text-[0.9375rem] font-medium transition-all duration-200 ${
-                    isActive
-                      ? 'bg-indigo-500/10 text-indigo-300 border border-indigo-500/20'
-                      : 'text-white/60 hover:text-white hover:bg-white/[0.05]'
-                  }`}
-                >
-                  {link.name}
-                </Link>
-              );
-            })}
-          </div>
-
-          {/* Right: Theme Toggle & Profile Dropdown */}
-          <div className="hidden md:flex items-center gap-3">
-            {/* Theme Toggle */}
-            <button
-              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-              className="p-2 text-white/60 hover:text-white bg-white/[0.05] border border-white/5 hover:border-white/10 rounded-xl transition-all active:scale-95 duration-150"
-              aria-label="Toggle Theme"
-            >
-              {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-            </button>
-
-            {/* Profile Dropdown */}
-            <div className="relative">
-              <button
-                onClick={() => setDropdownOpen((prev) => !prev)}
-                className="flex items-center gap-2 p-1.5 bg-white/[0.05] border border-white/5 hover:border-white/10 rounded-full transition-all duration-200"
+            <div className="flex items-center gap-4 min-w-0">
+              <Link
+                href="/"
+                id="nav-brand-logo"
+                className="flex items-center gap-2.5 group shrink-0"
               >
-                {user?.profilePicture ? (
-                  <img
-                    src={user.profilePicture}
-                    alt={user.name || 'Profile'}
-                    className="w-8 h-8 rounded-full object-cover border border-white/10"
-                  />
-                ) : (
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center text-white text-xs font-bold border border-white/10">
-                    {getInitials(user?.name)}
-                  </div>
-                )}
-                <ChevronDown className={`w-4 h-4 text-white/50 transition-transform duration-200 ${dropdownOpen ? 'rotate-180' : ''}`} />
+                <div
+                  className="w-9 h-9 rounded-xl flex items-center justify-center shadow-lg transition-transform duration-200 group-hover:scale-105"
+                  style={{
+                    background: 'linear-gradient(135deg, #818cf8 0%, #7c3aed 100%)',
+                    boxShadow: '0 4px 14px rgba(124, 58, 237, 0.4)',
+                  }}
+                >
+                  <Briefcase className="w-4 h-4 text-white" strokeWidth={2.5} />
+                </div>
+                <span
+                  className="text-xl font-extrabold tracking-tight hidden sm:block"
+                  style={{
+                    background: 'linear-gradient(90deg, #c4b5fd 0%, #f1f5f9 100%)',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                    backgroundClip: 'text',
+                  }}
+                >
+                  CareerHub
+                </span>
+              </Link>
+
+              <div
+                id="nav-search-bar"
+                className="hidden md:flex relative w-56 lg:w-80 transition-all duration-300"
+              >
+                <Search
+                  className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none transition-colors duration-200"
+                  style={{ color: searchFocused ? '#818cf8' : 'rgba(255,255,255,0.35)' }}
+                />
+                <input
+                  id="nav-search-input"
+                  type="text"
+                  placeholder="Search professionals, jobs..."
+                  onFocus={() => setSearchFocused(true)}
+                  onBlur={() => setSearchFocused(false)}
+                  className="nav-search-input w-full pl-9 pr-4 py-2 rounded-full text-sm text-white placeholder-white/30 outline-none transition-all duration-200"
+                  style={{
+                    background: searchFocused
+                      ? 'rgba(99, 102, 241, 0.12)'
+                      : 'rgba(255, 255, 255, 0.06)',
+                    border: searchFocused
+                      ? '1px solid rgba(129, 140, 248, 0.55)'
+                      : '1px solid rgba(255, 255, 255, 0.1)',
+                  }}
+                />
+              </div>
+            </div>
+
+            <div
+              id="nav-links-desktop"
+              className="hidden md:flex items-center gap-0.5"
+            >
+              {NAV_LINKS.map(({ name, href }) => {
+                const isActive =
+                  href === '/' ? pathname === '/' : pathname.startsWith(href);
+                return (
+                  <Link
+                    key={name}
+                    href={href}
+                    id={`nav-link-${name.toLowerCase()}`}
+                    className="relative px-4 py-2 rounded-xl text-[0.9rem] font-medium transition-all duration-200 group"
+                    style={{
+                      color: isActive ? '#c4b5fd' : 'rgba(255,255,255,0.55)',
+                      background: isActive
+                        ? 'rgba(124, 58, 237, 0.12)'
+                        : 'transparent',
+                      border: isActive
+                        ? '1px solid rgba(124, 58, 237, 0.2)'
+                        : '1px solid transparent',
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!isActive) {
+                        (e.currentTarget as HTMLElement).style.color =
+                          'rgba(255,255,255,0.9)';
+                        (e.currentTarget as HTMLElement).style.background =
+                          'rgba(255,255,255,0.05)';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!isActive) {
+                        (e.currentTarget as HTMLElement).style.color =
+                          'rgba(255,255,255,0.55)';
+                        (e.currentTarget as HTMLElement).style.background =
+                          'transparent';
+                      }
+                    }}
+                  >
+                    {name}
+                    {isActive && (
+                      <span
+                        className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full"
+                        style={{ background: '#a78bfa' }}
+                      />
+                    )}
+                  </Link>
+                );
+              })}
+            </div>
+
+            <div className="hidden md:flex items-center gap-2 shrink-0">
+
+              <button
+                id="nav-notifications-btn"
+                aria-label="Notifications"
+                className="nav-icon-btn relative p-2.5 rounded-xl transition-all duration-200"
+                style={{
+                  color: 'rgba(255,255,255,0.55)',
+                  background: 'rgba(255,255,255,0.05)',
+                  border: '1px solid rgba(255,255,255,0.06)',
+                }}
+                onMouseEnter={(e) => {
+                  (e.currentTarget as HTMLElement).style.color =
+                    'rgba(255,255,255,0.9)';
+                  (e.currentTarget as HTMLElement).style.background =
+                    'rgba(255,255,255,0.09)';
+                }}
+                onMouseLeave={(e) => {
+                  (e.currentTarget as HTMLElement).style.color =
+                    'rgba(255,255,255,0.55)';
+                  (e.currentTarget as HTMLElement).style.background =
+                    'rgba(255,255,255,0.05)';
+                }}
+              >
+                <Bell className="w-4.5 h-4.5" />
+                <span
+                  className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full border-2"
+                  style={{
+                    background: '#818cf8',
+                    borderColor: '#101415',
+                  }}
+                />
               </button>
 
-              {dropdownOpen && (
-                <>
-                  <div 
-                    className="fixed inset-0 z-40" 
-                    onClick={() => setDropdownOpen(false)}
-                  />
-                  <div className="absolute right-0 mt-2.5 w-56 origin-top-right rounded-2xl bg-slate-900/95 backdrop-blur-xl border border-white/10 p-2 shadow-2xl z-50 animate-in fade-in-50 zoom-in-95 duration-100">
-                    <div className="px-3.5 py-2.5 border-b border-white/5">
-                      <p className="text-sm font-semibold text-white truncate">{user?.name || 'User'}</p>
-                      <p className="text-xs text-white/45 truncate">@{user?.username || 'username'}</p>
+              <button
+                id="nav-settings-btn"
+                aria-label="Settings"
+                className="nav-icon-btn p-2.5 rounded-xl transition-all duration-200"
+                style={{
+                  color: 'rgba(255,255,255,0.55)',
+                  background: 'rgba(255,255,255,0.05)',
+                  border: '1px solid rgba(255,255,255,0.06)',
+                }}
+                onMouseEnter={(e) => {
+                  (e.currentTarget as HTMLElement).style.color =
+                    'rgba(255,255,255,0.9)';
+                  (e.currentTarget as HTMLElement).style.background =
+                    'rgba(255,255,255,0.09)';
+                }}
+                onMouseLeave={(e) => {
+                  (e.currentTarget as HTMLElement).style.color =
+                    'rgba(255,255,255,0.55)';
+                  (e.currentTarget as HTMLElement).style.background =
+                    'rgba(255,255,255,0.05)';
+                }}
+              >
+                <Settings className="w-4.5 h-4.5" />
+              </button>
+
+              <button
+                id="nav-theme-toggle"
+                onClick={toggleTheme}
+                aria-label="Toggle theme"
+                className="nav-icon-btn p-2.5 rounded-xl transition-all duration-200"
+                style={{
+                  color: 'rgba(255,255,255,0.55)',
+                  background: 'rgba(255,255,255,0.05)',
+                  border: '1px solid rgba(255,255,255,0.06)',
+                }}
+                onMouseEnter={(e) => {
+                  (e.currentTarget as HTMLElement).style.color =
+                    'rgba(255,255,255,0.9)';
+                  (e.currentTarget as HTMLElement).style.background =
+                    'rgba(255,255,255,0.09)';
+                }}
+                onMouseLeave={(e) => {
+                  (e.currentTarget as HTMLElement).style.color =
+                    'rgba(255,255,255,0.55)';
+                  (e.currentTarget as HTMLElement).style.background =
+                    'rgba(255,255,255,0.05)';
+                }}
+              >
+                {mounted ? (
+                  isDark ? (
+                    <Sun className="w-4.5 h-4.5 transition-transform duration-300 hover:rotate-12" />
+                  ) : (
+                    <Moon className="w-4.5 h-4.5 transition-transform duration-300 hover:-rotate-12" />
+                  )
+                ) : (
+                  <span className="w-4.5 h-4.5 block rounded-full bg-white/10 animate-pulse" />
+                )}
+              </button>
+
+              <div className="relative" ref={dropdownRef}>
+                <button
+                  id="nav-profile-trigger"
+                  onClick={() => setDropdownOpen((prev) => !prev)}
+                  aria-expanded={dropdownOpen}
+                  aria-haspopup="true"
+                  className="flex items-center gap-2 pl-1.5 pr-2.5 py-1.5 rounded-full transition-all duration-200"
+                  style={{
+                    background: 'rgba(255,255,255,0.05)',
+                    border: dropdownOpen
+                      ? '1px solid rgba(129,140,248,0.5)'
+                      : '1px solid rgba(255,255,255,0.08)',
+                  }}
+                >
+                  {user?.profilePicture ? (
+                    <img
+                      src={user.profilePicture}
+                      alt={user.name || 'Profile'}
+                      className="w-7 h-7 rounded-full object-cover border border-white/15"
+                    />
+                  ) : (
+                    <div
+                      className="w-7 h-7 rounded-full flex items-center justify-center text-white text-[11px] font-bold border border-white/15"
+                      style={{
+                        background:
+                          'linear-gradient(135deg, #6366f1 0%, #7c3aed 100%)',
+                      }}
+                    >
+                      {getInitials(user?.name)}
                     </div>
-                    <div className="py-1">
+                  )}
+                  <ChevronDown
+                    className="w-3.5 h-3.5 transition-transform duration-200"
+                    style={{
+                      color: 'rgba(255,255,255,0.45)',
+                      transform: dropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                    }}
+                  />
+                </button>
+
+                {dropdownOpen && (
+                  <div
+                    id="nav-profile-dropdown"
+                    className="absolute right-0 mt-2 w-56 origin-top-right rounded-2xl p-2 z-50 navbar-dropdown"
+                    style={{
+                      background: 'rgba(15, 20, 30, 0.97)',
+                      backdropFilter: 'blur(24px)',
+                      WebkitBackdropFilter: 'blur(24px)',
+                      border: '1px solid rgba(255,255,255,0.1)',
+                      boxShadow:
+                        '0 20px 60px rgba(0,0,0,0.5), 0 0 0 1px rgba(129,140,248,0.08)',
+                    }}
+                  >
+                    <div
+                      className="px-3.5 py-3 mb-1 rounded-xl"
+                      style={{ background: 'rgba(255,255,255,0.03)' }}
+                    >
+                      <p className="text-sm font-semibold text-white truncate">
+                        {user?.name || 'User'}
+                      </p>
+                      <p
+                        className="text-xs truncate mt-0.5"
+                        style={{ color: 'rgba(255,255,255,0.4)' }}
+                      >
+                        @{user?.username || 'username'}
+                      </p>
+                    </div>
+
+                    <div className="space-y-0.5">
                       <Link
                         href="/profile"
+                        id="dropdown-my-profile"
                         onClick={() => setDropdownOpen(false)}
-                        className="flex items-center gap-2 px-3 py-2 text-sm text-white/70 hover:text-white hover:bg-white/[0.06] rounded-xl transition-all duration-150"
+                        className="flex items-center gap-2.5 px-3 py-2.5 text-sm rounded-xl transition-all duration-150"
+                        style={{ color: 'rgba(255,255,255,0.65)' }}
+                        onMouseEnter={(e) => {
+                          (e.currentTarget as HTMLElement).style.color =
+                            'rgba(255,255,255,0.95)';
+                          (e.currentTarget as HTMLElement).style.background =
+                            'rgba(255,255,255,0.06)';
+                        }}
+                        onMouseLeave={(e) => {
+                          (e.currentTarget as HTMLElement).style.color =
+                            'rgba(255,255,255,0.65)';
+                          (e.currentTarget as HTMLElement).style.background =
+                            'transparent';
+                        }}
                       >
-                        <User className="w-4 h-4" />
+                        <User className="w-4 h-4 shrink-0" />
                         My Profile
                       </Link>
-                      <button
-                        onClick={() => {
-                          setDropdownOpen(false);
-                          handleLogout();
+
+                      <Link
+                        href="/settings"
+                        id="dropdown-settings"
+                        onClick={() => setDropdownOpen(false)}
+                        className="flex items-center gap-2.5 px-3 py-2.5 text-sm rounded-xl transition-all duration-150"
+                        style={{ color: 'rgba(255,255,255,0.65)' }}
+                        onMouseEnter={(e) => {
+                          (e.currentTarget as HTMLElement).style.color =
+                            'rgba(255,255,255,0.95)';
+                          (e.currentTarget as HTMLElement).style.background =
+                            'rgba(255,255,255,0.06)';
                         }}
-                        className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-400 hover:text-red-300 hover:bg-red-500/[0.08] rounded-xl transition-all duration-150"
+                        onMouseLeave={(e) => {
+                          (e.currentTarget as HTMLElement).style.color =
+                            'rgba(255,255,255,0.65)';
+                          (e.currentTarget as HTMLElement).style.background =
+                            'transparent';
+                        }}
                       >
-                        <LogOut className="w-4 h-4" />
+                        <Settings className="w-4 h-4 shrink-0" />
+                        Settings
+                      </Link>
+
+                      <div
+                        className="my-1.5 mx-1"
+                        style={{
+                          height: '1px',
+                          background: 'rgba(255,255,255,0.07)',
+                        }}
+                      />
+
+                      <button
+                        id="dropdown-sign-out"
+                        onClick={handleLogout}
+                        className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm rounded-xl transition-all duration-150"
+                        style={{ color: '#f87171' }}
+                        onMouseEnter={(e) => {
+                          (e.currentTarget as HTMLElement).style.color =
+                            '#fca5a5';
+                          (e.currentTarget as HTMLElement).style.background =
+                            'rgba(239,68,68,0.09)';
+                        }}
+                        onMouseLeave={(e) => {
+                          (e.currentTarget as HTMLElement).style.color =
+                            '#f87171';
+                          (e.currentTarget as HTMLElement).style.background =
+                            'transparent';
+                        }}
+                      >
+                        <LogOut className="w-4 h-4 shrink-0" />
                         Sign Out
                       </button>
                     </div>
                   </div>
-                </>
-              )}
+                )}
+              </div>
             </div>
-          </div>
 
-          {/* Mobile hamburger menu */}
-          <div className="flex md:hidden items-center gap-2">
-            <button
-              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-              className="p-2 text-white/60 hover:text-white bg-white/[0.05] rounded-xl transition-all duration-150"
-              aria-label="Toggle Theme"
-            >
-              {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-            </button>
-            
-            <button
-              onClick={() => setMobileMenuOpen((prev) => !prev)}
-              className="p-2 text-white/60 hover:text-white bg-white/[0.05] rounded-xl transition-all duration-150"
-            >
-              {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-            </button>
-          </div>
+            <div className="flex md:hidden items-center gap-2 shrink-0">
+              <button
+                id="mobile-theme-toggle"
+                onClick={toggleTheme}
+                aria-label="Toggle theme"
+                className="p-2 rounded-xl transition-all duration-150"
+                style={{
+                  color: 'rgba(255,255,255,0.6)',
+                  background: 'rgba(255,255,255,0.05)',
+                }}
+              >
+                {mounted ? (
+                  isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />
+                ) : (
+                  <span className="w-5 h-5 block rounded-full bg-white/10 animate-pulse" />
+                )}
+              </button>
 
+              <button
+                id="mobile-menu-toggle"
+                onClick={() => setMobileMenuOpen((prev) => !prev)}
+                aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
+                className="p-2 rounded-xl transition-all duration-150"
+                style={{
+                  color: 'rgba(255,255,255,0.6)',
+                  background: 'rgba(255,255,255,0.05)',
+                }}
+              >
+                {mobileMenuOpen ? (
+                  <X className="w-5 h-5" />
+                ) : (
+                  <Menu className="w-5 h-5" />
+                )}
+              </button>
+            </div>
+
+          </div>
         </div>
-      </div>
 
-      {/* Mobile Menu Drawer */}
-      {mobileMenuOpen && (
-        <div className="md:hidden border-t border-white/10 bg-[#101415]/95 backdrop-blur-xl px-4 pt-3 pb-4 space-y-3 shadow-inner">
-          <div className="relative group w-full mb-3">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40 pointer-events-none" />
-            <input 
-              type="text" 
-              placeholder="Search..." 
-              className="w-full pl-9 pr-4 py-2 bg-white/[0.06] border border-white/10 rounded-xl text-white text-sm placeholder-white/30 focus:outline-none"
-            />
-          </div>
+        {mobileMenuOpen && (
+          <div
+            id="mobile-nav-drawer"
+            className="md:hidden px-4 pt-3 pb-5 space-y-2 mobile-drawer"
+            style={{
+              borderTop: '1px solid rgba(255,255,255,0.08)',
+              background: 'rgba(10,14,20,0.98)',
+            }}
+          >
+            <div className="relative w-full mb-3">
+              <Search
+                className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none"
+                style={{ color: 'rgba(255,255,255,0.3)' }}
+              />
+              <input
+                id="mobile-search-input"
+                type="text"
+                placeholder="Search..."
+                className="w-full pl-9 pr-4 py-2.5 rounded-xl text-sm text-white placeholder-white/30 outline-none"
+                style={{
+                  background: 'rgba(255,255,255,0.06)',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                }}
+              />
+            </div>
 
-          <div className="flex flex-col gap-1.5">
-            {navLinks.map((link) => {
-              const isActive = pathname === link.href;
+            {NAV_LINKS.map(({ name, href, icon: Icon }) => {
+              const isActive =
+                href === '/' ? pathname === '/' : pathname.startsWith(href);
               return (
                 <Link
-                  key={link.name}
-                  href={link.href}
+                  key={name}
+                  href={href}
+                  id={`mobile-nav-link-${name.toLowerCase()}`}
                   onClick={() => setMobileMenuOpen(false)}
-                  className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-150 ${
-                    isActive
-                      ? 'bg-indigo-500/10 text-indigo-300'
-                      : 'text-white/60 hover:text-white hover:bg-white/[0.05]'
-                  }`}
+                  className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-150"
+                  style={{
+                    color: isActive ? '#c4b5fd' : 'rgba(255,255,255,0.6)',
+                    background: isActive
+                      ? 'rgba(124,58,237,0.12)'
+                      : 'transparent',
+                    border: isActive
+                      ? '1px solid rgba(124,58,237,0.2)'
+                      : '1px solid transparent',
+                  }}
                 >
-                  {link.name}
+                  <Icon className="w-4 h-4 shrink-0" />
+                  {name}
                 </Link>
               );
             })}
-          </div>
 
-          <div className="pt-3 border-t border-white/5 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              {user?.profilePicture ? (
-                <img
-                  src={user.profilePicture}
-                  alt={user.name || 'Profile'}
-                  className="w-9 h-9 rounded-full object-cover border border-white/10"
-                />
-              ) : (
-                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center text-white text-sm font-bold border border-white/10">
-                  {getInitials(user?.name)}
-                </div>
-              )}
-              <div>
-                <p className="text-sm font-semibold text-white">{user?.name || 'User'}</p>
-                <p className="text-[11px] text-white/40">@{user?.username || 'username'}</p>
-              </div>
-            </div>
-            <button
-              onClick={() => {
-                setMobileMenuOpen(false);
-                handleLogout();
-              }}
-              className="flex items-center gap-1.5 px-3 py-1.8 text-xs font-semibold text-red-400 hover:text-red-300 hover:bg-red-500/[0.08] border border-red-500/10 rounded-xl transition-all duration-150"
+            <div
+              className="mt-2 pt-3 flex items-center justify-between"
+              style={{ borderTop: '1px solid rgba(255,255,255,0.07)' }}
             >
-              <LogOut className="w-3.5 h-3.5" />
-              Sign Out
-            </button>
+              <div className="flex items-center gap-3">
+                {user?.profilePicture ? (
+                  <img
+                    src={user.profilePicture}
+                    alt={user.name || 'Profile'}
+                    className="w-9 h-9 rounded-full object-cover border border-white/15"
+                  />
+                ) : (
+                  <div
+                    className="w-9 h-9 rounded-full flex items-center justify-center text-white text-sm font-bold border border-white/15"
+                    style={{
+                      background:
+                        'linear-gradient(135deg, #6366f1 0%, #7c3aed 100%)',
+                    }}
+                  >
+                    {getInitials(user?.name)}
+                  </div>
+                )}
+                <div>
+                  <p className="text-sm font-semibold text-white leading-tight">
+                    {user?.name || 'User'}
+                  </p>
+                  <p
+                    className="text-[11px] mt-0.5"
+                    style={{ color: 'rgba(255,255,255,0.4)' }}
+                  >
+                    @{user?.username || 'username'}
+                  </p>
+                </div>
+              </div>
+
+              <button
+                id="mobile-sign-out-btn"
+                onClick={handleLogout}
+                className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-xl transition-all duration-150"
+                style={{
+                  color: '#f87171',
+                  background: 'rgba(239,68,68,0.07)',
+                  border: '1px solid rgba(239,68,68,0.15)',
+                }}
+              >
+                <LogOut className="w-3.5 h-3.5" />
+                Sign Out
+              </button>
+            </div>
           </div>
-        </div>
-      )}
-    </nav>
+        )}
+      </nav>
+    </>
   );
 }

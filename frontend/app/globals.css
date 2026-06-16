@@ -7,7 +7,6 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* Blob keyframe animations — not possible with Tailwind alone */
 @keyframes floatBlob1 {
   from { transform: translate(0, 0) scale(1); }
   to   { transform: translate(5%, 8%) scale(1.1); }
@@ -20,24 +19,95 @@ body {
   from { transform: translate(-50%, -50%) scale(1); }
   to   { transform: translate(-48%, -52%) scale(1.15); }
 }
+
+.blob-1 { animation: floatBlob1 12s ease-in-out infinite alternate; }
+.blob-2 { animation: floatBlob2 15s ease-in-out infinite alternate; }
+.blob-3 { animation: floatBlob3 10s ease-in-out infinite alternate; }
+
 @keyframes fadeInUp {
   from { opacity: 0; transform: translateY(24px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 
-.blob-1 {
-  animation: floatBlob1 12s ease-in-out infinite alternate;
-}
-.blob-2 {
-  animation: floatBlob2 15s ease-in-out infinite alternate;
-}
-.blob-3 {
-  animation: floatBlob3 10s ease-in-out infinite alternate;
+.fade-in-up           { animation: fadeInUp 0.55s cubic-bezier(0.16,1,0.3,1) both; }
+.fade-in-up-delay-1   { animation-delay: 0.07s; }
+.fade-in-up-delay-2   { animation-delay: 0.14s; }
+.fade-in-up-delay-3   { animation-delay: 0.21s; }
+.fade-in-up-delay-4   { animation-delay: 0.28s; }
+.fade-in-up-delay-5   { animation-delay: 0.35s; }
+
+@keyframes dropdownReveal {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
-.fade-in-up             { animation: fadeInUp 0.55s cubic-bezier(0.16,1,0.3,1) both; }
-.fade-in-up-delay-1     { animation-delay: 0.07s; }
-.fade-in-up-delay-2     { animation-delay: 0.14s; }
-.fade-in-up-delay-3     { animation-delay: 0.21s; }
-.fade-in-up-delay-4     { animation-delay: 0.28s; }
-.fade-in-up-delay-5     { animation-delay: 0.35s; }
+.navbar-dropdown {
+  animation: dropdownReveal 0.18s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  transform-origin: top right;
+}
+
+@keyframes mobileDrawerReveal {
+  from {
+    opacity: 0;
+    transform: translateY(-12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.mobile-drawer {
+  animation: mobileDrawerReveal 0.22s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.nav-search-input:focus {
+  box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.12);
+}
+
+.nav-icon-btn:active {
+  transform: scale(0.92);
+}
+
+@keyframes badgePulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(129, 140, 248, 0.5); }
+  50%       { box-shadow: 0 0 0 4px rgba(129, 140, 248, 0); }
+}
+
+#nav-notifications-btn span.rounded-full {
+  animation: badgePulse 2.2s ease-in-out infinite;
+}
+
+.light #main-navbar {
+  background: rgba(248, 250, 252, 0.85) !important;
+  border-bottom-color: rgba(0, 0, 0, 0.08) !important;
+}
+
+.light .nav-search-input {
+  color: #1e293b;
+}
+
+.light .nav-search-input::placeholder {
+  color: rgba(15, 23, 42, 0.35);
+}
+
+::-webkit-scrollbar       { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: rgba(129, 140, 248, 0.25);
+  border-radius: 99px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(129, 140, 248, 0.45);
+}
+
+::selection {
+  background: rgba(129, 140, 248, 0.3);
+  color: #f1f5f9;
+}
