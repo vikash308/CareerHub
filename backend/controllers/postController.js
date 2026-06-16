@@ -52,7 +52,7 @@ export const deletePost = async (req, res) =>{
             return res.status(401).json({message:"unauthorized"})
         }
 
-        await Post.deletePost({_id: post_id})
+        await Post.deleteOne({_id: post_id})
         return res.json({message:"post Deleted"});
     } catch (error) {
         return res.status(500).json({message: error.message})
@@ -74,9 +74,9 @@ export const commentPost = async(req,res) =>{
         }
 
         const comment = new Comment({
-            useId: user._id,
+            userId: user._id,
             postId: post_id,
-            comment:commentBody
+            body: commentBody
         })
 
         await comment.save();
@@ -90,20 +90,17 @@ export const get_comments_by_post = async (req,res) =>{
     const {post_id} = req.body;
 
     try {
-        const post = await Post.findOne({_id: post_id});
+        const comments = await Comment.find({ postId: post_id }).populate('userId', 'name username profilePicture');
 
-        if(!post){
-            return res.status(404).json({message: "post not found"})
-        }
-
-        return res.json({comments: post.comments})
+        return res.json({comments})
     } catch (error) {
         return res.status(500).json({message:error.message});
     }
 }
 
 export const deleteComemntOfUser = async (req,res) =>{
-    const {token, comment_id}= req.body;
+    const token = req.body.token || req.query.token || req.headers['x-auth-token'];
+    const comment_id = req.body.comment_id || req.query.comment_id;
 
     try {
         const user = await User.findOne({token}).select("_id")
