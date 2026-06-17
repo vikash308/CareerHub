@@ -1,6 +1,7 @@
 import User from "../models/userModel.js";
 import Post from '../models/postModel.js';
-import Comment from '../models/commentModel.js'
+import Comment from '../models/commentModel.js';
+import cloudinary from '../config/cloudinary.js';
 
 
 export const createPost = async (req, res) => {
@@ -9,19 +10,45 @@ export const createPost = async (req, res) => {
   try {
     const user = await User.findOne({ token });
     if (!user) {
+      if (req.file) {
+        const publicId = req.file.filename || req.file.public_id;
+        if (publicId) {
+          const isVideo = req.file.mimetype.startsWith('video/');
+          await cloudinary.uploader.destroy(publicId, { resource_type: isVideo ? 'video' : 'image' });
+        }
+      }
       return res.status(404).json({ message: "User not found" });
     }
+
+    if (req.file) {
+      const isVideo = req.file.mimetype.startsWith('video/');
+      if (isVideo && req.file.size > 5 * 1024 * 1024) {
+        const publicId = req.file.filename || req.file.public_id;
+        if (publicId) {
+          await cloudinary.uploader.destroy(publicId, { resource_type: 'video' });
+        }
+        return res.status(400).json({ message: "Video must be under 5MB" });
+      }
+    }
+
     const post = new Post({
         userId: user._id,
-        body:req.body.body,
-        media: req.file != undefined ? req.file.filename : "",
-        fileType:req.file != undefined ? req.file.mimetype.split("/")[1] : ""
+        body: req.body.body,
+        media: req.file ? req.file.path : "",
+        fileType: req.file ? req.file.mimetype.split("/")[1] : ""
     })
 
     await post.save();
 
     return res.status(200).json({message: " post created"});
   } catch (error) {
+    if (req.file) {
+      const publicId = req.file.filename || req.file.public_id;
+      if (publicId) {
+        const isVideo = req.file.mimetype.startsWith('video/');
+        await cloudinary.uploader.destroy(publicId, { resource_type: isVideo ? 'video' : 'image' });
+      }
+    }
     return res.status(500).json({message:error.message});
   }
 };
