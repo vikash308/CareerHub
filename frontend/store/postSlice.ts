@@ -1,7 +1,15 @@
+/**
+ * postSlice.ts – Updated Day 4
+ * Uses the proper Post type from types.ts.
+ * PostCard manages its own local like count optimistically;
+ * likePost here just syncs the Redux store's likes field.
+ */
+
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { Post } from './types';
 
 interface PostState {
-  posts: any[];
+  posts: Post[];
 }
 
 const initialState: PostState = {
@@ -12,15 +20,22 @@ const postSlice = createSlice({
   name: 'posts',
   initialState,
   reducers: {
-    setPosts: (state, action: PayloadAction<any[]>) => {
+    /** Replace the entire posts array (called after API fetch). */
+    setPosts: (state, action: PayloadAction<Post[]>) => {
       state.posts = action.payload;
     },
-    addPost: (state, action: PayloadAction<any>) => {
+
+    /** Prepend a new post (optimistic create). */
+    addPost: (state, action: PayloadAction<Post>) => {
       state.posts.unshift(action.payload);
     },
+
+    /** Remove a post by _id (after delete confirmation). */
     deletePost: (state, action: PayloadAction<string>) => {
-      state.posts = state.posts.filter((post) => post._id !== action.payload);
+      state.posts = state.posts.filter((p) => p._id !== action.payload);
     },
+
+    /** Increment likes on a specific post in the Redux store. */
     likePost: (state, action: PayloadAction<{ postId: string }>) => {
       const post = state.posts.find((p) => p._id === action.payload.postId);
       if (post) {
