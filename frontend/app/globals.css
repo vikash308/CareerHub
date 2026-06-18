@@ -156,3 +156,32 @@ body {
 .post-textarea {
   transition: height 0.15s ease;
 }
+
+/* ===== Day 6: Comment Section Animations ===== */
+@keyframes commentSectionIn {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.comment-section-enter {
+  animation: commentSectionIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes commentItemIn {
+  from { opacity: 0; transform: translateX(-8px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+.comment-item-enter {
+  animation: commentItemIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* ===== Day 7: Profile Modal Animation ===== */
+@keyframes profileModalIn {
+  from { opacity: 0; transform: scale(0.97) translateY(12px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.profile-modal-enter {
+  animation: profileModalIn 0.28s cubic-bezier(0.16, 1, 0.3, 1) both;
+}

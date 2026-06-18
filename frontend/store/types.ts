@@ -41,6 +41,7 @@ export interface Post {
   createdAt: string;
   updatedAt: string;
   active: boolean;
+  commentCount?: number;
 }
 
 export interface Comment {
@@ -48,7 +49,9 @@ export interface Comment {
   userId: User; // Populated user object
   postId: string;
   body: string;
+  createdAt?: string;
 }
+
 
 export interface ConnectionRequest {
   _id: string;

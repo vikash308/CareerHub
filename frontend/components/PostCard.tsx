@@ -7,6 +7,7 @@ import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { likePost, deletePost as deletePostAction } from '../store/postSlice';
 import { api } from '../utils/api';
 import { Post } from '../store/types';
+import CommentSection from './CommentSection';
 
 interface PostCardProps {
   post: Post;
@@ -59,12 +60,18 @@ export default function PostCard({ post, animationDelay = 0 }: PostCardProps) {
   const [liked, setLiked] = useState(() => getLikedSet().has(post._id));
   const [popAnim, setPopAnim] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [showComments, setShowComments] = useState(false);
+  const [localCommentCount, setLocalCommentCount] = useState(post.commentCount || 0);
 
   const isOwner = user?._id === post.userId._id;
 
   useEffect(() => {
     setLocalLikes(post.likes);
   }, [post.likes]);
+
+  useEffect(() => {
+    setLocalCommentCount(post.commentCount || 0);
+  }, [post.commentCount]);
 
   // post.media contains the full Cloudinary URL
   const mediaUrl = post.media && post.media !== 'pending' ? post.media : null;
@@ -192,11 +199,18 @@ export default function PostCard({ post, animationDelay = 0 }: PostCardProps) {
           </button>
 
           <button
-            className="flex items-center gap-1.5 hover:text-indigo-400 cursor-pointer transition-colors font-semibold"
-            aria-label="View comments"
+            onClick={() => setShowComments((v) => !v)}
+            className={`flex items-center gap-1.5 cursor-pointer transition-colors font-semibold
+              ${showComments ? 'text-indigo-400' : 'hover:text-indigo-400'}`}
+            aria-label="Toggle comments"
           >
-            <MessageSquare className="w-4 h-4" />
+            <MessageSquare className={`w-4 h-4 transition-transform duration-200 ${showComments ? 'scale-110' : ''}`} />
             <span>Comment</span>
+            {localCommentCount > 0 && (
+              <span className="text-[10px] opacity-90 bg-white/10 px-1.5 py-0.5 rounded-full font-medium">
+                {localCommentCount}
+              </span>
+            )}
           </button>
         </div>
 
@@ -209,6 +223,14 @@ export default function PostCard({ post, animationDelay = 0 }: PostCardProps) {
           Share
         </button>
       </div>
+
+      {/* Comments Section - slides in when showComments is true */}
+      {showComments && (
+        <CommentSection 
+          postId={post._id} 
+          onCommentCountChange={setLocalCommentCount}
+        />
+      )}
     </article>
   );
 }

@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
+import Link from 'next/link';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { setPosts } from '../store/postSlice';
 import { api } from '../utils/api';
@@ -20,6 +21,10 @@ export default function FeedPage() {
 
   const [isLoading, setIsLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
+  const [recommendations, setRecommendations] = useState<any[]>([]);
+  const [loadingSuggestions, setLoadingSuggestions] = useState(false);
+  const [showStickyWidget, setShowStickyWidget] = useState(false);
+  const lastScrollYRef = useRef(0);
 
   const fetchPosts = async () => {
     setIsLoading(true);
@@ -41,9 +46,63 @@ export default function FeedPage() {
     }
   };
 
+  const fetchSuggestions = async () => {
+    setLoadingSuggestions(true);
+    try {
+      const data = await api.getAllUserProfiles();
+      if (data && Array.isArray(data.profiles)) {
+        const filtered = data.profiles.filter(
+          (p: any) => p.userId && p.userId._id !== user?._id
+        );
+        // Take first 3
+        setRecommendations(filtered.slice(0, 3));
+      }
+    } catch {
+      // ignore silently
+    } finally {
+      setLoadingSuggestions(false);
+    }
+  };
+
+  const handleConnect = async (targetUserId: string, targetName: string) => {
+    try {
+      const res = await api.sendConnectionRequest(targetUserId);
+      if (res?.message === 'request sent') {
+        toast.success(`Connection request sent to ${targetName}!`);
+        setRecommendations((prev) => prev.filter((p) => p.userId._id !== targetUserId));
+      } else {
+        toast.error(res?.message || 'Failed to send request.');
+      }
+    } catch {
+      toast.error('Network error. Could not send request.');
+    }
+  };
+
   useEffect(() => {
     fetchPosts();
+    if (user) {
+      fetchSuggestions();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      const lastScrollY = lastScrollYRef.current;
+      
+      // Show sticky create post widget when scrolling up and past 220px
+      if (currentScrollY > 220 && currentScrollY < lastScrollY) {
+        setShowStickyWidget(true);
+      } else {
+        setShowStickyWidget(false);
+      }
+      
+      lastScrollYRef.current = currentScrollY;
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
   const getInitials = (name: string) =>
@@ -55,7 +114,7 @@ export default function FeedPage() {
       .toUpperCase();
 
   return (
-    <div className="relative min-h-screen bg-[#0F172A] overflow-hidden">
+    <div className="relative min-h-screen bg-[#0F172A]">
       <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none" aria-hidden="true">
         <div className="blob-1 absolute top-[10%] left-[5%] w-[45%] h-[45%] rounded-full bg-indigo-500/10 blur-3xl" />
         <div className="blob-2 absolute bottom-[15%] right-[5%] w-[40%] h-[40%] rounded-full bg-violet-500/10 blur-3xl" />
@@ -64,7 +123,7 @@ export default function FeedPage() {
       <main className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
 
-          <aside className="hidden lg:block lg:col-span-3 space-y-4">
+          <aside className="hidden lg:block lg:col-span-3 space-y-4 sticky top-24 h-fit">
             <div className="bg-white/[0.04] backdrop-blur-xl border border-white/10 rounded-2xl overflow-hidden hover:border-white/20 transition-all duration-300 shadow-xl">
               <div className="h-24 bg-gradient-to-r from-indigo-600/20 to-violet-600/20" />
               <div className="px-4 pb-5 -mt-10 flex flex-col items-center">
@@ -98,15 +157,24 @@ export default function FeedPage() {
                   </div>
                 </div>
 
-                <button className="w-full mt-4 py-2 px-4 rounded-xl bg-white/[0.06] border border-white/10 text-white text-xs font-semibold hover:bg-white/10 hover:border-white/20 transition-all duration-200">
+                <Link
+                  href="/profile"
+                  className="w-full mt-4 py-2 px-4 rounded-xl bg-white/[0.06] border border-white/10 text-white text-xs font-semibold hover:bg-white/10 hover:border-white/20 transition-all duration-200 text-center block"
+                >
                   View Profile
-                </button>
+                </Link>
               </div>
             </div>
           </aside>
 
           <section className="col-span-1 lg:col-span-6 space-y-5">
-            <CreatePostWidget onPostCreated={fetchPosts} />
+            <div className={`transition-all duration-300 ${
+              showStickyWidget 
+                ? 'sticky top-24 z-20 shadow-2xl comment-section-enter bg-[#0F172A]/95 backdrop-blur-md p-1 rounded-2xl' 
+                : ''
+            }`}>
+              <CreatePostWidget onPostCreated={fetchPosts} />
+            </div>
 
             <div className="flex items-center justify-between px-1">
               <h2 className="text-xs font-bold text-white/50 uppercase tracking-widest">
@@ -164,7 +232,7 @@ export default function FeedPage() {
             )}
           </section>
 
-          <aside className="hidden lg:block lg:col-span-3 space-y-4">
+          <aside className="hidden lg:block lg:col-span-3 space-y-4 sticky top-24 h-fit">
             <div className="bg-white/[0.04] backdrop-blur-xl border border-white/10 rounded-2xl p-5 hover:border-white/20 transition-all duration-300 relative overflow-hidden group shadow-xl">
               <div className="absolute -right-4 -top-4 w-24 h-24 bg-indigo-500/20 rounded-full blur-2xl group-hover:bg-indigo-500/30 transition-all duration-300" />
 
@@ -211,33 +279,50 @@ export default function FeedPage() {
               </h3>
 
               <div className="space-y-3">
-                {[
-                  { initials: 'SJ', name: 'Sarah Jenkins', role: 'UX Designer' },
-                  { initials: 'MC', name: 'Michael Chen',  role: 'Product Manager' },
-                  { initials: 'AR', name: 'Aisha Rahman',  role: 'Backend Engineer' },
-                ].map((person) => (
-                  <div
-                    key={person.name}
-                    className="flex items-center justify-between p-2 hover:bg-white/[0.04] rounded-xl transition-all duration-150"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center text-white text-xs font-bold border border-white/10 shrink-0 select-none">
-                        {person.initials}
-                      </div>
-                      <div>
-                        <p className="text-xs font-bold text-white leading-tight">{person.name}</p>
-                        <p className="text-[10px] text-white/45 mt-0.5">{person.role}</p>
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => toast.success(`Connection request sent to ${person.name}!`)}
-                      className="w-8 h-8 rounded-full border border-white/10 flex items-center justify-center text-white/50 hover:text-indigo-400 hover:border-indigo-400/50 hover:bg-indigo-500/5 transition-all duration-150 active:scale-90"
-                      aria-label={`Connect with ${person.name}`}
+                {loadingSuggestions && (
+                  <div className="text-center py-4 text-xs text-white/30">Loading suggestions...</div>
+                )}
+                
+                {!loadingSuggestions && recommendations.length === 0 && (
+                  <p className="text-center py-4 text-xs text-white/25">No new suggestions found.</p>
+                )}
+
+                {!loadingSuggestions && recommendations.map((profile) => {
+                  const person = profile.userId;
+                  if (!person) return null;
+                  const initials = getInitials(person.name);
+                  return (
+                    <div
+                      key={person._id}
+                      className="flex items-center justify-between p-2 hover:bg-white/[0.04] rounded-xl transition-all duration-150"
                     >
-                      <UserPlus className="w-4 h-4" />
-                    </button>
-                  </div>
-                ))}
+                      <div className="flex items-center gap-3 min-w-0">
+                        {person.profilePicture ? (
+                          <img
+                            src={person.profilePicture}
+                            alt={person.name}
+                            className="w-9 h-9 rounded-full object-cover border border-white/10 shrink-0"
+                          />
+                        ) : (
+                          <div className="w-9 h-9 rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center text-white text-xs font-bold border border-white/10 shrink-0 select-none">
+                            {initials}
+                          </div>
+                        )}
+                        <div className="min-w-0">
+                          <p className="text-xs font-bold text-white leading-tight truncate">{person.name}</p>
+                          <p className="text-[10px] text-white/45 mt-0.5 truncate">{profile.currentPost || 'Professional'}</p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => handleConnect(person._id, person.name)}
+                        className="w-8 h-8 rounded-full border border-white/10 flex items-center justify-center text-white/50 hover:text-indigo-400 hover:border-indigo-400/50 hover:bg-indigo-500/5 transition-all duration-150 active:scale-90 shrink-0"
+                        aria-label={`Connect with ${person.name}`}
+                      >
+                        <UserPlus className="w-4 h-4" />
+                      </button>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </aside>
