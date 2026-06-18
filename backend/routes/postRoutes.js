@@ -8,7 +8,8 @@ router.route('/post').post(uploadPostMedia.single('media'), createPost);
 router.route('/posts').get(getAllPosts);
 router.route("/delete_post").post(deletePost);
 router.route("/comment").post(commentPost);
-router.route("/get_comments").get(get_comments_by_post);
+router.route("/get_comments").post(get_comments_by_post);
+
 router.route("/delete_comment").delete(deleteComemntOfUser)
 router.route("/increment_post_like").post(increment_likes);
 

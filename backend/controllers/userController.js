@@ -155,7 +155,7 @@ export const updateUserProfile = async (req, res) => {
 
 export const getUserAndProfile = async (req, res) => {
     try {
-        const token = req.body.token || req.query.token || req.headers['x-auth-token'];
+        const token = req.body?.token || req.query.token || req.headers['x-auth-token'];
 
         const user = await User.findOne({ token: token });
 
@@ -163,7 +163,13 @@ export const getUserAndProfile = async (req, res) => {
             return res.status(404).json({ message: "user not found" });
         }
 
-        const userProfile = await Profile.findOne({ userId: user._id }).populate('userId', 'name email username profilePicture')
+        let userProfile = await Profile.findOne({ userId: user._id }).populate('userId', 'name email username profilePicture');
+
+        if (!userProfile) {
+            const newProfile = new Profile({ userId: user._id });
+            await newProfile.save();
+            userProfile = await Profile.findOne({ userId: user._id }).populate('userId', 'name email username profilePicture');
+        }
 
         return res.json(userProfile);
     } catch (error) {
@@ -252,7 +258,7 @@ export const sendConnectionRequest = async (req, res) => {
 }
 
 export const getMyConnectionRequests = async (req, res) => {
-    const token = req.body.token || req.query.token || req.headers['x-auth-token'];
+    const token = req.body?.token || req.query.token || req.headers['x-auth-token'];
 
     try {
         const user = await User.findOne({ token });
@@ -271,7 +277,7 @@ export const getMyConnectionRequests = async (req, res) => {
 
 
 export const whatAreMyConnection = async (req, res) => {
-    const token = req.body.token || req.query.token || req.headers['x-auth-token'];
+    const token = req.body?.token || req.query.token || req.headers['x-auth-token'];
     try {
         const user = await User.findOne({ token });
 

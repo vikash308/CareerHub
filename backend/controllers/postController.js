@@ -55,8 +55,19 @@ export const createPost = async (req, res) => {
 
 export const getAllPosts = async (req,res) =>{
     try {
-        const posts = await Post.find().populate('userId', ' name username email profilePicture')
-        return res.json({posts});
+        const posts = await Post.find().populate('userId', ' name username email profilePicture').lean();
+        
+        const postsWithComments = await Promise.all(
+            posts.map(async (post) => {
+                const commentCount = await Comment.countDocuments({ postId: post._id });
+                return {
+                    ...post,
+                    commentCount
+                };
+            })
+        );
+
+        return res.json({posts: postsWithComments});
     } catch (error) {
         return res.status(500).json({message: error.message})
     }
@@ -126,8 +137,8 @@ export const get_comments_by_post = async (req,res) =>{
 }
 
 export const deleteComemntOfUser = async (req,res) =>{
-    const token = req.body.token || req.query.token || req.headers['x-auth-token'];
-    const comment_id = req.body.comment_id || req.query.comment_id;
+    const token = req.body?.token || req.query.token || req.headers['x-auth-token'];
+    const comment_id = req.body?.comment_id || req.query.comment_id;
 
     try {
         const user = await User.findOne({token}).select("_id")

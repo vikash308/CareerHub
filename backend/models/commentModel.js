@@ -13,8 +13,8 @@ const commentSchema = new mongoose.Schema({
         type:String,
         required:true
     }
-})
+}, { timestamps: true })
 
 const Comment = new mongoose.model("Comment", commentSchema);
 
-export default Comment;
+export default Comment;
