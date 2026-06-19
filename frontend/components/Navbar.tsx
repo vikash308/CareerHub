@@ -51,6 +51,15 @@ export default function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [mounted,        setMounted]        = useState(false);
   const [searchFocused,  setSearchFocused]  = useState(false);
+  const [searchVal,      setSearchVal]      = useState('');
+
+  const handleSearchSubmit = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && searchVal.trim()) {
+      router.push(`/directory?search=${encodeURIComponent(searchVal.trim())}`);
+      setSearchVal('');
+      setMobileMenuOpen(false);
+    }
+  };
 
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -86,13 +95,13 @@ export default function Navbar() {
     <>
       <nav
         id="main-navbar"
-        className="sticky top-0 z-40 w-full"
+        className="sticky top-0 z-40 w-full transition-colors duration-300"
         style={{
-          background: 'rgba(16, 20, 21, 0.75)',
+          background: 'var(--nav-bg)',
           backdropFilter: 'blur(20px)',
           WebkitBackdropFilter: 'blur(20px)',
-          borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
-          boxShadow: '0 1px 40px rgba(0,0,0,0.35)',
+          borderBottom: '1px solid var(--nav-border)',
+          boxShadow: 'var(--nav-shadow)',
         }}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -116,7 +125,7 @@ export default function Navbar() {
                 <span
                   className="text-xl font-extrabold tracking-tight hidden sm:block"
                   style={{
-                    background: 'linear-gradient(90deg, #c4b5fd 0%, #f1f5f9 100%)',
+                    background: 'var(--logo-gradient)',
                     WebkitBackgroundClip: 'text',
                     WebkitTextFillColor: 'transparent',
                     backgroundClip: 'text',
@@ -132,23 +141,18 @@ export default function Navbar() {
               >
                 <Search
                   className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none transition-colors duration-200"
-                  style={{ color: searchFocused ? '#818cf8' : 'rgba(255,255,255,0.35)' }}
+                  style={{ color: searchFocused ? '#818cf8' : 'var(--text-muted)' }}
                 />
                 <input
                   id="nav-search-input"
                   type="text"
                   placeholder="Search professionals, jobs..."
+                  value={searchVal}
+                  onChange={(e) => setSearchVal(e.target.value)}
+                  onKeyDown={handleSearchSubmit}
                   onFocus={() => setSearchFocused(true)}
                   onBlur={() => setSearchFocused(false)}
-                  className="nav-search-input w-full pl-9 pr-4 py-2 rounded-full text-sm text-white placeholder-white/30 outline-none transition-all duration-200"
-                  style={{
-                    background: searchFocused
-                      ? 'rgba(99, 102, 241, 0.12)'
-                      : 'rgba(255, 255, 255, 0.06)',
-                    border: searchFocused
-                      ? '1px solid rgba(129, 140, 248, 0.55)'
-                      : '1px solid rgba(255, 255, 255, 0.1)',
-                  }}
+                  className="nav-search-input w-full pl-9 pr-4 py-2.5 rounded-full text-sm theme-input outline-none transition-all duration-200"
                 />
               </div>
             </div>
@@ -167,26 +171,26 @@ export default function Navbar() {
                     id={`nav-link-${name.toLowerCase()}`}
                     className="relative px-4 py-2 rounded-xl text-[0.9rem] font-medium transition-all duration-200 group"
                     style={{
-                      color: isActive ? '#c4b5fd' : 'rgba(255,255,255,0.55)',
+                      color: isActive ? 'var(--active-link-text)' : 'var(--text-secondary)',
                       background: isActive
-                        ? 'rgba(124, 58, 237, 0.12)'
+                        ? 'var(--active-link-bg)'
                         : 'transparent',
                       border: isActive
-                        ? '1px solid rgba(124, 58, 237, 0.2)'
+                        ? '1px solid var(--active-link-border)'
                         : '1px solid transparent',
                     }}
                     onMouseEnter={(e) => {
                       if (!isActive) {
                         (e.currentTarget as HTMLElement).style.color =
-                          'rgba(255,255,255,0.9)';
+                          'var(--text-primary)';
                         (e.currentTarget as HTMLElement).style.background =
-                          'rgba(255,255,255,0.05)';
+                          'var(--btn-sec-bg)';
                       }
                     }}
                     onMouseLeave={(e) => {
                       if (!isActive) {
                         (e.currentTarget as HTMLElement).style.color =
-                          'rgba(255,255,255,0.55)';
+                          'var(--text-secondary)';
                         (e.currentTarget as HTMLElement).style.background =
                           'transparent';
                       }
@@ -209,56 +213,23 @@ export default function Navbar() {
               <button
                 id="nav-notifications-btn"
                 aria-label="Notifications"
-                className="nav-icon-btn relative p-2.5 rounded-xl transition-all duration-200"
-                style={{
-                  color: 'rgba(255,255,255,0.55)',
-                  background: 'rgba(255,255,255,0.05)',
-                  border: '1px solid rgba(255,255,255,0.06)',
-                }}
-                onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLElement).style.color =
-                    'rgba(255,255,255,0.9)';
-                  (e.currentTarget as HTMLElement).style.background =
-                    'rgba(255,255,255,0.09)';
-                }}
-                onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLElement).style.color =
-                    'rgba(255,255,255,0.55)';
-                  (e.currentTarget as HTMLElement).style.background =
-                    'rgba(255,255,255,0.05)';
-                }}
+                className="nav-icon-btn relative p-2.5 rounded-xl transition-all duration-200 theme-btn-secondary"
               >
                 <Bell className="w-4.5 h-4.5" />
                 <span
                   className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full border-2"
                   style={{
                     background: '#818cf8',
-                    borderColor: '#101415',
+                    borderColor: 'var(--background)',
                   }}
                 />
               </button>
 
               <button
                 id="nav-settings-btn"
+                onClick={() => router.push('/settings')}
                 aria-label="Settings"
-                className="nav-icon-btn p-2.5 rounded-xl transition-all duration-200"
-                style={{
-                  color: 'rgba(255,255,255,0.55)',
-                  background: 'rgba(255,255,255,0.05)',
-                  border: '1px solid rgba(255,255,255,0.06)',
-                }}
-                onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLElement).style.color =
-                    'rgba(255,255,255,0.9)';
-                  (e.currentTarget as HTMLElement).style.background =
-                    'rgba(255,255,255,0.09)';
-                }}
-                onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLElement).style.color =
-                    'rgba(255,255,255,0.55)';
-                  (e.currentTarget as HTMLElement).style.background =
-                    'rgba(255,255,255,0.05)';
-                }}
+                className="nav-icon-btn p-2.5 rounded-xl transition-all duration-200 theme-btn-secondary"
               >
                 <Settings className="w-4.5 h-4.5" />
               </button>
@@ -267,24 +238,7 @@ export default function Navbar() {
                 id="nav-theme-toggle"
                 onClick={toggleTheme}
                 aria-label="Toggle theme"
-                className="nav-icon-btn p-2.5 rounded-xl transition-all duration-200"
-                style={{
-                  color: 'rgba(255,255,255,0.55)',
-                  background: 'rgba(255,255,255,0.05)',
-                  border: '1px solid rgba(255,255,255,0.06)',
-                }}
-                onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLElement).style.color =
-                    'rgba(255,255,255,0.9)';
-                  (e.currentTarget as HTMLElement).style.background =
-                    'rgba(255,255,255,0.09)';
-                }}
-                onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLElement).style.color =
-                    'rgba(255,255,255,0.55)';
-                  (e.currentTarget as HTMLElement).style.background =
-                    'rgba(255,255,255,0.05)';
-                }}
+                className="nav-icon-btn p-2.5 rounded-xl transition-all duration-200 theme-btn-secondary"
               >
                 {mounted ? (
                   isDark ? (
@@ -303,12 +257,9 @@ export default function Navbar() {
                   onClick={() => setDropdownOpen((prev) => !prev)}
                   aria-expanded={dropdownOpen}
                   aria-haspopup="true"
-                  className="flex items-center gap-2 pl-1.5 pr-2.5 py-1.5 rounded-full transition-all duration-200"
+                  className="flex items-center gap-2 pl-1.5 pr-2.5 py-1.5 rounded-full transition-all duration-200 theme-btn-secondary"
                   style={{
-                    background: 'rgba(255,255,255,0.05)',
-                    border: dropdownOpen
-                      ? '1px solid rgba(129,140,248,0.5)'
-                      : '1px solid rgba(255,255,255,0.08)',
+                    borderColor: dropdownOpen ? 'rgba(129,140,248,0.5)' : 'var(--btn-sec-border)'
                   }}
                 >
                   {user?.profilePicture ? (
@@ -331,7 +282,7 @@ export default function Navbar() {
                   <ChevronDown
                     className="w-3.5 h-3.5 transition-transform duration-200"
                     style={{
-                      color: 'rgba(255,255,255,0.45)',
+                      color: 'var(--text-muted)',
                       transform: dropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)',
                     }}
                   />
@@ -342,24 +293,23 @@ export default function Navbar() {
                     id="nav-profile-dropdown"
                     className="absolute right-0 mt-2 w-56 origin-top-right rounded-2xl p-2 z-50 navbar-dropdown"
                     style={{
-                      background: 'rgba(15, 20, 30, 0.97)',
+                      background: 'var(--dropdown-bg)',
                       backdropFilter: 'blur(24px)',
                       WebkitBackdropFilter: 'blur(24px)',
-                      border: '1px solid rgba(255,255,255,0.1)',
-                      boxShadow:
-                        '0 20px 60px rgba(0,0,0,0.5), 0 0 0 1px rgba(129,140,248,0.08)',
+                      border: '1px solid var(--dropdown-border)',
+                      boxShadow: 'var(--dropdown-shadow)',
                     }}
                   >
                     <div
                       className="px-3.5 py-3 mb-1 rounded-xl"
-                      style={{ background: 'rgba(255,255,255,0.03)' }}
+                      style={{ background: 'var(--dropdown-header-bg)' }}
                     >
-                      <p className="text-sm font-semibold text-white truncate">
+                      <p className="text-sm font-semibold theme-text-primary truncate">
                         {user?.name || 'User'}
                       </p>
                       <p
                         className="text-xs truncate mt-0.5"
-                        style={{ color: 'rgba(255,255,255,0.4)' }}
+                        style={{ color: 'var(--text-muted)' }}
                       >
                         @{user?.username || 'username'}
                       </p>
@@ -371,16 +321,16 @@ export default function Navbar() {
                         id="dropdown-my-profile"
                         onClick={() => setDropdownOpen(false)}
                         className="flex items-center gap-2.5 px-3 py-2.5 text-sm rounded-xl transition-all duration-150"
-                        style={{ color: 'rgba(255,255,255,0.65)' }}
+                        style={{ color: 'var(--text-secondary)' }}
                         onMouseEnter={(e) => {
                           (e.currentTarget as HTMLElement).style.color =
-                            'rgba(255,255,255,0.95)';
+                            'var(--text-primary)';
                           (e.currentTarget as HTMLElement).style.background =
-                            'rgba(255,255,255,0.06)';
+                            'var(--btn-sec-bg)';
                         }}
                         onMouseLeave={(e) => {
                           (e.currentTarget as HTMLElement).style.color =
-                            'rgba(255,255,255,0.65)';
+                            'var(--text-secondary)';
                           (e.currentTarget as HTMLElement).style.background =
                             'transparent';
                         }}
@@ -394,16 +344,16 @@ export default function Navbar() {
                         id="dropdown-settings"
                         onClick={() => setDropdownOpen(false)}
                         className="flex items-center gap-2.5 px-3 py-2.5 text-sm rounded-xl transition-all duration-150"
-                        style={{ color: 'rgba(255,255,255,0.65)' }}
+                        style={{ color: 'var(--text-secondary)' }}
                         onMouseEnter={(e) => {
                           (e.currentTarget as HTMLElement).style.color =
-                            'rgba(255,255,255,0.95)';
+                            'var(--text-primary)';
                           (e.currentTarget as HTMLElement).style.background =
-                            'rgba(255,255,255,0.06)';
+                            'var(--btn-sec-bg)';
                         }}
                         onMouseLeave={(e) => {
                           (e.currentTarget as HTMLElement).style.color =
-                            'rgba(255,255,255,0.65)';
+                            'var(--text-secondary)';
                           (e.currentTarget as HTMLElement).style.background =
                             'transparent';
                         }}
@@ -416,7 +366,7 @@ export default function Navbar() {
                         className="my-1.5 mx-1"
                         style={{
                           height: '1px',
-                          background: 'rgba(255,255,255,0.07)',
+                          background: 'var(--border)',
                         }}
                       />
 
@@ -452,11 +402,7 @@ export default function Navbar() {
                 id="mobile-theme-toggle"
                 onClick={toggleTheme}
                 aria-label="Toggle theme"
-                className="p-2 rounded-xl transition-all duration-150"
-                style={{
-                  color: 'rgba(255,255,255,0.6)',
-                  background: 'rgba(255,255,255,0.05)',
-                }}
+                className="p-2 rounded-xl transition-all duration-150 theme-btn-secondary"
               >
                 {mounted ? (
                   isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />
@@ -469,11 +415,7 @@ export default function Navbar() {
                 id="mobile-menu-toggle"
                 onClick={() => setMobileMenuOpen((prev) => !prev)}
                 aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
-                className="p-2 rounded-xl transition-all duration-150"
-                style={{
-                  color: 'rgba(255,255,255,0.6)',
-                  background: 'rgba(255,255,255,0.05)',
-                }}
+                className="p-2 rounded-xl transition-all duration-150 theme-btn-secondary"
               >
                 {mobileMenuOpen ? (
                   <X className="w-5 h-5" />
@@ -489,26 +431,25 @@ export default function Navbar() {
         {mobileMenuOpen && (
           <div
             id="mobile-nav-drawer"
-            className="md:hidden px-4 pt-3 pb-5 space-y-2 mobile-drawer"
+            className="md:hidden px-4 pt-3 pb-5 space-y-2 mobile-drawer border-t"
             style={{
-              borderTop: '1px solid rgba(255,255,255,0.08)',
-              background: 'rgba(10,14,20,0.98)',
+              borderTopColor: 'var(--border)',
+              background: 'var(--dropdown-bg)',
             }}
           >
             <div className="relative w-full mb-3">
               <Search
                 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none"
-                style={{ color: 'rgba(255,255,255,0.3)' }}
+                style={{ color: 'var(--text-muted)' }}
               />
               <input
                 id="mobile-search-input"
                 type="text"
                 placeholder="Search..."
-                className="w-full pl-9 pr-4 py-2.5 rounded-xl text-sm text-white placeholder-white/30 outline-none"
-                style={{
-                  background: 'rgba(255,255,255,0.06)',
-                  border: '1px solid rgba(255,255,255,0.1)',
-                }}
+                value={searchVal}
+                onChange={(e) => setSearchVal(e.target.value)}
+                onKeyDown={handleSearchSubmit}
+                className="w-full pl-9 pr-4 py-2.5 rounded-xl text-sm theme-input outline-none"
               />
             </div>
 
@@ -521,15 +462,15 @@ export default function Navbar() {
                   href={href}
                   id={`mobile-nav-link-${name.toLowerCase()}`}
                   onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-150"
+                  className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-150 border"
                   style={{
-                    color: isActive ? '#c4b5fd' : 'rgba(255,255,255,0.6)',
+                    color: isActive ? 'var(--active-link-text)' : 'var(--text-secondary)',
                     background: isActive
-                      ? 'rgba(124,58,237,0.12)'
+                      ? 'var(--active-link-bg)'
                       : 'transparent',
-                    border: isActive
-                      ? '1px solid rgba(124,58,237,0.2)'
-                      : '1px solid transparent',
+                    borderColor: isActive
+                      ? 'var(--active-link-border)'
+                      : 'transparent',
                   }}
                 >
                   <Icon className="w-4 h-4 shrink-0" />
@@ -539,8 +480,8 @@ export default function Navbar() {
             })}
 
             <div
-              className="mt-2 pt-3 flex items-center justify-between"
-              style={{ borderTop: '1px solid rgba(255,255,255,0.07)' }}
+              className="mt-2 pt-3 flex items-center justify-between border-t"
+              style={{ borderTopColor: 'var(--border)' }}
             >
               <div className="flex items-center gap-3">
                 {user?.profilePicture ? (
@@ -561,12 +502,11 @@ export default function Navbar() {
                   </div>
                 )}
                 <div>
-                  <p className="text-sm font-semibold text-white leading-tight">
+                  <p className="text-sm font-semibold theme-text-primary leading-tight">
                     {user?.name || 'User'}
                   </p>
                   <p
-                    className="text-[11px] mt-0.5"
-                    style={{ color: 'rgba(255,255,255,0.4)' }}
+                    className="text-[11px] mt-0.5 theme-text-muted"
                   >
                     @{user?.username || 'username'}
                   </p>

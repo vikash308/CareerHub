@@ -196,4 +196,49 @@ export const api = {
     });
     return res.json();
   },
+
+  // --- Jobs ---
+  getJobs: async () => {
+    const res = await fetch(`${API_BASE_URL}/jobs`, {
+      method: 'GET',
+    });
+    return res.json();
+  },
+
+  createJob: async (jobData: any) => {
+    const res = await fetch(`${API_BASE_URL}/jobs`, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify({ ...jobData, token: getToken() }),
+    });
+    return res.json();
+  },
+
+  applyToJob: async (jobId: string) => {
+    const res = await fetch(`${API_BASE_URL}/jobs/apply`, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify({ jobId, token: getToken() }),
+    });
+    return res.json();
+  },
+
+  // --- Settings ---
+  changePassword: async (passwordData: any) => {
+    const res = await fetch(`${API_BASE_URL}/user/change_password`, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify({ ...passwordData, token: getToken() }),
+    });
+    return res.json();
+  },
+
+  deleteAccount: async () => {
+    const res = await fetch(`${API_BASE_URL}/user/delete_account`, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify({ token: getToken() }),
+    });
+    return res.json();
+  },
 };

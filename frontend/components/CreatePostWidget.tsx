@@ -171,10 +171,10 @@ export default function CreatePostWidget({ onPostCreated }: CreatePostWidgetProp
 
   return (
     <div
-      className={`bg-white/[0.04] backdrop-blur-xl border rounded-2xl p-4 transition-all duration-300 shadow-xl
+      className={`theme-card rounded-2xl p-4 transition-all duration-300 shadow-xl
         ${isFocused || hasContent
-          ? 'border-indigo-500/30 bg-indigo-950/10'
-          : 'border-white/10 hover:border-white/15'
+          ? 'border-indigo-500/40 bg-indigo-500/[0.04]'
+          : 'hover:border-indigo-500/20'
         }`}
     >
       <form onSubmit={handleSubmit}>
@@ -184,10 +184,10 @@ export default function CreatePostWidget({ onPostCreated }: CreatePostWidgetProp
               <img
                 src={user.profilePicture}
                 alt={user.name}
-                className="w-10 h-10 rounded-full object-cover border border-white/10"
+                className="w-10 h-10 rounded-full object-cover border border-[var(--border)]"
               />
             ) : (
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center text-white text-xs font-bold border border-white/10 select-none">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center text-white text-xs font-bold border border-[var(--border)] select-none">
                 {user?.name ? getInitials(user.name) : 'CH'}
               </div>
             )}
@@ -204,11 +204,11 @@ export default function CreatePostWidget({ onPostCreated }: CreatePostWidgetProp
               onKeyDown={handleKeyDown}
               placeholder="Share a career update, insight, or ask the community..."
               rows={3}
-              className="post-textarea w-full bg-transparent border-none text-white placeholder-white/30 text-sm focus:ring-0 resize-none p-0 outline-none leading-relaxed"
+              className="post-textarea w-full bg-transparent border-none theme-text-primary placeholder-[var(--text-muted)] text-sm focus:ring-0 resize-none p-0 outline-none leading-relaxed"
             />
 
             {previewUrl && (
-              <div className="relative mt-3 rounded-xl overflow-hidden border border-white/10 bg-black/30 max-h-56">
+              <div className="relative mt-3 rounded-xl overflow-hidden border theme-border bg-[var(--btn-sec-bg)] max-h-56">
                 {isVideo ? (
                   <video
                     src={previewUrl}
@@ -233,7 +233,7 @@ export default function CreatePostWidget({ onPostCreated }: CreatePostWidgetProp
               </div>
             )}
 
-            <div className="flex justify-between items-center mt-3 pt-3 border-t border-white/[0.07]">
+            <div className="flex justify-between items-center mt-3 pt-3 border-t theme-border">
               <div className="flex items-center gap-1">
                 <input
                   type="file"
@@ -246,7 +246,7 @@ export default function CreatePostWidget({ onPostCreated }: CreatePostWidgetProp
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-white/45 hover:text-indigo-400 hover:bg-white/[0.05] transition-all text-xs font-medium"
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg theme-text-secondary hover:text-indigo-500 hover:bg-[var(--btn-sec-bg)] transition-all text-xs font-medium"
                   title="Attach image"
                 >
                   <ImageIcon className="w-4 h-4" />
@@ -255,7 +255,7 @@ export default function CreatePostWidget({ onPostCreated }: CreatePostWidgetProp
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-white/45 hover:text-indigo-400 hover:bg-white/[0.05] transition-all text-xs font-medium"
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg theme-text-secondary hover:text-indigo-500 hover:bg-[var(--btn-sec-bg)] transition-all text-xs font-medium"
                   title="Attach video"
                 >
                   <Film className="w-4 h-4" />
@@ -298,7 +298,7 @@ export default function CreatePostWidget({ onPostCreated }: CreatePostWidgetProp
         </div>
 
         {!isFocused && !hasContent && (
-          <p className="mt-2 ml-[3.375rem] text-[10px] text-white/20 font-medium select-none">
+          <p className="mt-2 ml-[3.375rem] text-[10px] theme-text-muted opacity-60 font-medium select-none">
             Press Ctrl + Enter to publish
           </p>
         )}

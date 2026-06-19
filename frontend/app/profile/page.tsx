@@ -125,16 +125,16 @@ function EditProfileModal({ profile, onClose, onSaved }: EditProfileModalProps) 
       />
 
       {/* Modal */}
-      <div className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-[#0f1117] border border-white/10 rounded-2xl shadow-2xl profile-modal-enter">
+      <div className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-[var(--dropdown-bg)] border border-[var(--dropdown-border)] rounded-2xl shadow-2xl profile-modal-enter flex flex-col">
         {/* Header */}
-        <div className="sticky top-0 z-10 flex items-center justify-between px-6 py-4 border-b border-white/10 bg-[#0f1117]/95 backdrop-blur-md">
+        <div className="sticky top-0 z-10 flex items-center justify-between px-6 py-4 border-b theme-border bg-[var(--dropdown-bg)]/95 backdrop-blur-md">
           <div className="flex items-center gap-2">
             <Edit3 className="w-4 h-4 text-indigo-400" />
-            <h2 className="text-sm font-bold text-white">Edit Profile</h2>
+            <h2 className="text-sm font-bold theme-text-primary">Edit Profile</h2>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-white/40 hover:text-white hover:bg-white/10 transition-all"
+            className="p-1.5 rounded-lg theme-text-secondary hover:theme-text-primary hover:bg-[var(--btn-sec-bg)] transition-all"
           >
             <X className="w-4 h-4" />
           </button>
@@ -143,27 +143,27 @@ function EditProfileModal({ profile, onClose, onSaved }: EditProfileModalProps) 
         <div className="p-6 space-y-6">
           {/* Basic Info */}
           <section>
-            <h3 className="text-xs font-bold text-white/50 uppercase tracking-widest mb-3">
+            <h3 className="text-xs font-bold theme-text-muted uppercase tracking-widest mb-3">
               Basic Info
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="text-[11px] text-white/40 font-medium mb-1 block">Full Name</label>
+                <label className="text-[11px] theme-text-secondary font-medium mb-1 block">Full Name</label>
                 <input
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="w-full bg-white/[0.05] border border-white/10 rounded-xl px-3 py-2 text-sm text-white placeholder-white/25 focus:outline-none focus:border-indigo-500/40 focus:bg-white/[0.07] transition-all"
+                  className="w-full theme-input rounded-xl px-3 py-2 text-sm placeholder-[var(--text-muted)] focus:outline-none transition-all"
                   placeholder="Your full name"
                 />
               </div>
               <div>
-                <label className="text-[11px] text-white/40 font-medium mb-1 block">Username</label>
+                <label className="text-[11px] theme-text-secondary font-medium mb-1 block">Username</label>
                 <div className="relative">
-                  <AtSign className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/30" />
+                  <AtSign className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 theme-text-muted" />
                   <input
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
-                    className="w-full bg-white/[0.05] border border-white/10 rounded-xl pl-8 pr-3 py-2 text-sm text-white placeholder-white/25 focus:outline-none focus:border-indigo-500/40 focus:bg-white/[0.07] transition-all"
+                    className="w-full theme-input rounded-xl pl-8 pr-3 py-2 text-sm placeholder-[var(--text-muted)] focus:outline-none transition-all"
                     placeholder="username"
                   />
                 </div>
@@ -173,30 +173,30 @@ function EditProfileModal({ profile, onClose, onSaved }: EditProfileModalProps) 
 
           {/* Current Position & Bio */}
           <section>
-            <h3 className="text-xs font-bold text-white/50 uppercase tracking-widest mb-3">
+            <h3 className="text-xs font-bold theme-text-muted uppercase tracking-widest mb-3">
               Professional Details
             </h3>
             <div className="space-y-3">
               <div>
-                <label className="text-[11px] text-white/40 font-medium mb-1 block">Current Position / Headline</label>
+                <label className="text-[11px] theme-text-secondary font-medium mb-1 block">Current Position / Headline</label>
                 <input
                   value={currentPost}
                   onChange={(e) => setCurrentPost(e.target.value)}
-                  className="w-full bg-white/[0.05] border border-white/10 rounded-xl px-3 py-2 text-sm text-white placeholder-white/25 focus:outline-none focus:border-indigo-500/40 focus:bg-white/[0.07] transition-all"
+                  className="w-full theme-input rounded-xl px-3 py-2 text-sm placeholder-[var(--text-muted)] focus:outline-none transition-all"
                   placeholder="e.g. Senior Software Engineer at Google"
                 />
               </div>
               <div>
-                <label className="text-[11px] text-white/40 font-medium mb-1 block">Bio</label>
+                <label className="text-[11px] theme-text-secondary font-medium mb-1 block">Bio</label>
                 <textarea
                   value={bio}
                   onChange={(e) => setBio(e.target.value)}
                   rows={3}
                   maxLength={500}
-                  className="w-full bg-white/[0.05] border border-white/10 rounded-xl px-3 py-2 text-sm text-white placeholder-white/25 focus:outline-none focus:border-indigo-500/40 focus:bg-white/[0.07] transition-all resize-none"
+                  className="w-full theme-input rounded-xl px-3 py-2 text-sm placeholder-[var(--text-muted)] focus:outline-none transition-all resize-none"
                   placeholder="A short bio about yourself..."
                 />
-                <p className="text-[10px] text-white/25 text-right mt-0.5">{bio.length}/500</p>
+                <p className="text-[10px] theme-text-muted text-right mt-0.5">{bio.length}/500</p>
               </div>
             </div>
           </section>
@@ -204,7 +204,7 @@ function EditProfileModal({ profile, onClose, onSaved }: EditProfileModalProps) 
           {/* Work Experience */}
           <section>
             <div className="flex items-center justify-between mb-3">
-              <h3 className="text-xs font-bold text-white/50 uppercase tracking-widest">
+              <h3 className="text-xs font-bold theme-text-muted uppercase tracking-widest">
                 Work Experience
               </h3>
               <button
@@ -218,16 +218,16 @@ function EditProfileModal({ profile, onClose, onSaved }: EditProfileModalProps) 
             </div>
             <div className="space-y-3">
               {pastWork.length === 0 && (
-                <p className="text-[11px] text-white/25 text-center py-3 border border-dashed border-white/10 rounded-xl">
+                <p className="text-[11px] theme-text-muted text-center py-3 border border-dashed theme-border rounded-xl">
                   No work experience added yet.
                 </p>
               )}
               {pastWork.map((work, idx) => (
-                <div key={idx} className="bg-white/[0.03] border border-white/10 rounded-xl p-3 space-y-2 relative">
+                <div key={idx} className="bg-[var(--btn-sec-bg)] border border-[var(--border)] rounded-xl p-3 space-y-2 relative">
                   <button
                     type="button"
                     onClick={() => removeWork(idx)}
-                    className="absolute top-3 right-3 text-white/25 hover:text-red-400 transition-colors"
+                    className="absolute top-3 right-3 theme-text-muted hover:text-red-400 transition-colors"
                   >
                     <X className="w-3.5 h-3.5" />
                   </button>
@@ -236,20 +236,20 @@ function EditProfileModal({ profile, onClose, onSaved }: EditProfileModalProps) 
                       value={work.company}
                       onChange={(e) => updateWork(idx, 'company', e.target.value)}
                       placeholder="Company"
-                      className="bg-white/[0.05] border border-white/10 rounded-lg px-3 py-1.5 text-xs text-white placeholder-white/25 focus:outline-none focus:border-indigo-500/40 transition-all"
+                      className="theme-input rounded-lg px-3 py-1.5 text-xs placeholder-[var(--text-muted)] focus:outline-none transition-all"
                     />
                     <input
                       value={work.position}
                       onChange={(e) => updateWork(idx, 'position', e.target.value)}
                       placeholder="Position / Role"
-                      className="bg-white/[0.05] border border-white/10 rounded-lg px-3 py-1.5 text-xs text-white placeholder-white/25 focus:outline-none focus:border-indigo-500/40 transition-all"
+                      className="theme-input rounded-lg px-3 py-1.5 text-xs placeholder-[var(--text-muted)] focus:outline-none transition-all"
                     />
                   </div>
                   <input
                     value={work.years}
                     onChange={(e) => updateWork(idx, 'years', e.target.value)}
                     placeholder="Duration (e.g. 2021 - Present)"
-                    className="w-full bg-white/[0.05] border border-white/10 rounded-lg px-3 py-1.5 text-xs text-white placeholder-white/25 focus:outline-none focus:border-indigo-500/40 transition-all"
+                    className="w-full theme-input rounded-lg px-3 py-1.5 text-xs placeholder-[var(--text-muted)] focus:outline-none transition-all"
                   />
                 </div>
               ))}
@@ -259,7 +259,7 @@ function EditProfileModal({ profile, onClose, onSaved }: EditProfileModalProps) 
           {/* Education */}
           <section>
             <div className="flex items-center justify-between mb-3">
-              <h3 className="text-xs font-bold text-white/50 uppercase tracking-widest">
+              <h3 className="text-xs font-bold theme-text-muted uppercase tracking-widest">
                 Education
               </h3>
               <button
@@ -273,16 +273,16 @@ function EditProfileModal({ profile, onClose, onSaved }: EditProfileModalProps) 
             </div>
             <div className="space-y-3">
               {education.length === 0 && (
-                <p className="text-[11px] text-white/25 text-center py-3 border border-dashed border-white/10 rounded-xl">
+                <p className="text-[11px] theme-text-muted text-center py-3 border border-dashed theme-border rounded-xl">
                   No education added yet.
                 </p>
               )}
               {education.map((edu, idx) => (
-                <div key={idx} className="bg-white/[0.03] border border-white/10 rounded-xl p-3 space-y-2 relative">
+                <div key={idx} className="bg-[var(--btn-sec-bg)] border border-[var(--border)] rounded-xl p-3 space-y-2 relative">
                   <button
                     type="button"
                     onClick={() => removeEdu(idx)}
-                    className="absolute top-3 right-3 text-white/25 hover:text-red-400 transition-colors"
+                    className="absolute top-3 right-3 theme-text-muted hover:text-red-400 transition-colors"
                   >
                     <X className="w-3.5 h-3.5" />
                   </button>
@@ -291,20 +291,20 @@ function EditProfileModal({ profile, onClose, onSaved }: EditProfileModalProps) 
                       value={edu.school}
                       onChange={(e) => updateEdu(idx, 'school', e.target.value)}
                       placeholder="School / University"
-                      className="bg-white/[0.05] border border-white/10 rounded-lg px-3 py-1.5 text-xs text-white placeholder-white/25 focus:outline-none focus:border-indigo-500/40 transition-all"
+                      className="theme-input rounded-lg px-3 py-1.5 text-xs placeholder-[var(--text-muted)] focus:outline-none transition-all"
                     />
                     <input
                       value={edu.degree}
                       onChange={(e) => updateEdu(idx, 'degree', e.target.value)}
                       placeholder="Degree"
-                      className="bg-white/[0.05] border border-white/10 rounded-lg px-3 py-1.5 text-xs text-white placeholder-white/25 focus:outline-none focus:border-indigo-500/40 transition-all"
+                      className="theme-input rounded-lg px-3 py-1.5 text-xs placeholder-[var(--text-muted)] focus:outline-none transition-all"
                     />
                   </div>
                   <input
                     value={edu.fieldOfStudy}
                     onChange={(e) => updateEdu(idx, 'fieldOfStudy', e.target.value)}
                     placeholder="Field of Study (e.g. Computer Science)"
-                    className="w-full bg-white/[0.05] border border-white/10 rounded-lg px-3 py-1.5 text-xs text-white placeholder-white/25 focus:outline-none focus:border-indigo-500/40 transition-all"
+                    className="w-full theme-input rounded-lg px-3 py-1.5 text-xs placeholder-[var(--text-muted)] focus:outline-none transition-all"
                   />
                 </div>
               ))}
@@ -313,10 +313,10 @@ function EditProfileModal({ profile, onClose, onSaved }: EditProfileModalProps) 
         </div>
 
         {/* Footer */}
-        <div className="sticky bottom-0 flex items-center justify-end gap-3 px-6 py-4 border-t border-white/10 bg-[#0f1117]/95 backdrop-blur-md">
+        <div className="sticky bottom-0 flex items-center justify-end gap-3 px-6 py-4 border-t theme-border bg-[var(--dropdown-bg)]/95 backdrop-blur-md">
           <button
             onClick={onClose}
-            className="px-4 py-2 rounded-xl text-xs font-semibold text-white/50 hover:text-white hover:bg-white/[0.07] transition-all"
+            className="px-4 py-2 rounded-xl text-xs font-semibold theme-text-secondary hover:theme-text-primary hover:bg-[var(--btn-sec-bg)] transition-all"
           >
             Cancel
           </button>
@@ -420,11 +420,11 @@ export default function ProfilePage() {
   const profileUser = profile?.userId;
 
   return (
-    <div className="relative min-h-screen bg-[#0F172A] overflow-hidden">
+    <div className="relative min-h-screen page-bg">
       {/* Background blobs */}
       <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none" aria-hidden="true">
-        <div className="blob-1 absolute top-[10%] left-[5%] w-[45%] h-[45%] rounded-full bg-indigo-500/10 blur-3xl" />
-        <div className="blob-2 absolute bottom-[15%] right-[5%] w-[40%] h-[40%] rounded-full bg-violet-500/10 blur-3xl" />
+        <div className="blob-1 absolute top-[10%] left-[5%] w-[45%] h-[45%] rounded-full bg-indigo-500/10 blur-3xl theme-blob" />
+        <div className="blob-2 absolute bottom-[15%] right-[5%] w-[40%] h-[40%] rounded-full bg-violet-500/10 blur-3xl theme-blob" />
       </div>
 
       <main className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
@@ -433,7 +433,7 @@ export default function ProfilePage() {
         {isLoading && (
           <div className="flex flex-col items-center justify-center py-24 gap-4">
             <Loader2 className="w-8 h-8 animate-spin text-indigo-400" />
-            <p className="text-sm text-white/40">Loading your profile...</p>
+            <p className="text-sm theme-text-muted">Loading your profile...</p>
           </div>
         )}
 
@@ -441,7 +441,7 @@ export default function ProfilePage() {
         {!isLoading && fetchError && (
           <div className="bg-red-500/10 border border-red-500/20 rounded-2xl p-8 text-center">
             <p className="text-sm text-red-400 font-semibold mb-2">Failed to load profile</p>
-            <p className="text-xs text-white/40 mb-4">{fetchError}</p>
+            <p className="text-xs theme-text-muted mb-4">{fetchError}</p>
             <button
               onClick={fetchProfile}
               className="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-xl transition-colors"
@@ -456,7 +456,7 @@ export default function ProfilePage() {
           <div className="space-y-5 fade-in-up">
 
             {/* ── Hero Card ── */}
-            <div className="bg-white/[0.04] backdrop-blur-xl border border-white/10 rounded-2xl overflow-hidden shadow-xl">
+            <div className="theme-card rounded-2xl overflow-hidden shadow-xl">
               {/* Cover banner */}
               <div className="h-32 sm:h-44 bg-gradient-to-r from-indigo-900/60 via-violet-900/40 to-slate-900/60 relative">
                 <div className="absolute inset-0 opacity-30"
@@ -478,10 +478,10 @@ export default function ProfilePage() {
                         <img
                           src={profileUser?.profilePicture || user?.profilePicture}
                           alt={profileUser?.name || user?.name}
-                          className="w-24 h-24 sm:w-28 sm:h-28 rounded-full object-cover border-4 border-[#0F172A] shadow-2xl"
+                          className="w-24 h-24 sm:w-28 sm:h-28 rounded-full object-cover border-4 border-[var(--background)] shadow-2xl"
                         />
                       ) : (
-                        <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center text-white text-3xl font-bold border-4 border-[#0F172A] shadow-2xl select-none">
+                        <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center text-white text-3xl font-bold border-4 border-[var(--background)] shadow-2xl select-none">
                           {getInitials(profileUser?.name || user?.name || 'U')}
                         </div>
                       )}
@@ -509,7 +509,7 @@ export default function ProfilePage() {
                   {/* Edit button */}
                   <button
                     onClick={() => setShowEditModal(true)}
-                    className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-white/15 text-white/70 text-xs font-semibold hover:bg-white/[0.07] hover:text-white hover:border-white/25 transition-all duration-200 self-start sm:self-auto"
+                    className="flex items-center gap-2 px-5 py-2.5 rounded-xl theme-btn-secondary self-start sm:self-auto"
                   >
                     <Edit3 className="w-3.5 h-3.5" />
                     Edit Profile
@@ -518,7 +518,7 @@ export default function ProfilePage() {
 
                 {/* Name / headline */}
                 <div className="mt-4">
-                  <h1 className="text-xl sm:text-2xl font-bold text-white leading-tight">
+                  <h1 className="text-xl sm:text-2xl font-bold theme-text-primary leading-tight">
                     {profileUser?.name || user?.name || 'Your Name'}
                   </h1>
                   {profile.currentPost && (
@@ -528,13 +528,13 @@ export default function ProfilePage() {
                   )}
                   <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2">
                     {(profileUser?.username || user?.username) && (
-                      <div className="flex items-center gap-1.5 text-[12px] text-white/40">
+                      <div className="flex items-center gap-1.5 text-[12px] theme-text-muted">
                         <AtSign className="w-3 h-3" />
                         {profileUser?.username || user?.username}
                       </div>
                     )}
                     {(profileUser?.email || user?.email) && (
-                      <div className="flex items-center gap-1.5 text-[12px] text-white/40">
+                      <div className="flex items-center gap-1.5 text-[12px] theme-text-muted">
                         <Mail className="w-3 h-3" />
                         {profileUser?.email || user?.email}
                       </div>
@@ -544,7 +544,7 @@ export default function ProfilePage() {
 
                 {/* Bio */}
                 {profile.bio && (
-                  <p className="mt-4 text-sm text-white/65 leading-relaxed max-w-2xl border-t border-white/[0.07] pt-4">
+                  <p className="mt-4 text-sm theme-text-secondary leading-relaxed max-w-2xl border-t theme-border pt-4">
                     {profile.bio}
                   </p>
                 )}
@@ -552,7 +552,7 @@ export default function ProfilePage() {
                 {!profile.bio && (
                   <button
                     onClick={() => setShowEditModal(true)}
-                    className="mt-4 text-xs text-white/25 hover:text-indigo-400 transition-colors border-t border-white/[0.07] pt-4 block"
+                    className="mt-4 text-xs theme-text-muted hover:text-indigo-400 transition-colors border-t theme-border pt-4 block"
                   >
                     + Add a bio to let people know about you
                   </button>
@@ -561,17 +561,17 @@ export default function ProfilePage() {
             </div>
 
             {/* ── Work Experience Card ── */}
-            <div className="bg-white/[0.04] backdrop-blur-xl border border-white/10 rounded-2xl p-5 sm:p-6 shadow-xl">
+            <div className="theme-card rounded-2xl p-5 sm:p-6 shadow-xl">
               <div className="flex items-center justify-between mb-5">
                 <div className="flex items-center gap-2">
                   <div className="p-2 rounded-lg bg-indigo-500/10 border border-indigo-500/20">
                     <Briefcase className="w-4 h-4 text-indigo-400" />
                   </div>
-                  <h2 className="text-sm font-bold text-white">Work Experience</h2>
+                  <h2 className="text-sm font-bold theme-text-primary">Work Experience</h2>
                 </div>
                 <button
                   onClick={() => setShowEditModal(true)}
-                  className="p-1.5 rounded-lg text-white/30 hover:text-indigo-400 hover:bg-indigo-500/10 transition-all"
+                  className="p-1.5 rounded-lg theme-text-muted hover:text-indigo-400 hover:bg-indigo-500/10 transition-all"
                 >
                   <Plus className="w-4 h-4" />
                 </button>
@@ -582,13 +582,13 @@ export default function ProfilePage() {
                   {profile.pastWork.map((work, idx) => (
                     <div
                       key={idx}
-                      className="flex gap-4 items-start pb-4 border-b border-white/[0.06] last:border-0 last:pb-0"
+                      className="flex gap-4 items-start pb-4 border-b theme-border last:border-0 last:pb-0"
                     >
                       <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500/20 to-violet-500/20 border border-indigo-500/20 flex items-center justify-center shrink-0">
                         <Building2 className="w-4 h-4 text-indigo-400" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-white leading-tight">
+                        <p className="text-sm font-semibold theme-text-primary leading-tight">
                           {work.position || 'Position'}
                         </p>
                         <p className="text-[12px] text-indigo-300/80 mt-0.5">
@@ -596,8 +596,8 @@ export default function ProfilePage() {
                         </p>
                         {work.years && (
                           <div className="flex items-center gap-1 mt-1">
-                            <MapPin className="w-3 h-3 text-white/25" />
-                            <span className="text-[11px] text-white/30">{work.years}</span>
+                            <MapPin className="w-3 h-3 theme-text-muted" />
+                            <span className="text-[11px] theme-text-muted">{work.years}</span>
                           </div>
                         )}
                       </div>
@@ -605,9 +605,9 @@ export default function ProfilePage() {
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-6 border border-dashed border-white/10 rounded-xl">
-                  <Briefcase className="w-8 h-8 text-white/10 mx-auto mb-2" />
-                  <p className="text-xs text-white/25 mb-2">No work experience added yet</p>
+                <div className="text-center py-6 border border-dashed theme-border rounded-xl">
+                  <Briefcase className="w-8 h-8 theme-text-muted mx-auto mb-2" />
+                  <p className="text-xs theme-text-secondary mb-2">No work experience added yet</p>
                   <button
                     onClick={() => setShowEditModal(true)}
                     className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors"
@@ -619,17 +619,17 @@ export default function ProfilePage() {
             </div>
 
             {/* ── Education Card ── */}
-            <div className="bg-white/[0.04] backdrop-blur-xl border border-white/10 rounded-2xl p-5 sm:p-6 shadow-xl">
+            <div className="theme-card rounded-2xl p-5 sm:p-6 shadow-xl">
               <div className="flex items-center justify-between mb-5">
                 <div className="flex items-center gap-2">
                   <div className="p-2 rounded-lg bg-violet-500/10 border border-violet-500/20">
                     <GraduationCap className="w-4 h-4 text-violet-400" />
                   </div>
-                  <h2 className="text-sm font-bold text-white">Education</h2>
+                  <h2 className="text-sm font-bold theme-text-primary">Education</h2>
                 </div>
                 <button
                   onClick={() => setShowEditModal(true)}
-                  className="p-1.5 rounded-lg text-white/30 hover:text-violet-400 hover:bg-violet-500/10 transition-all"
+                  className="p-1.5 rounded-lg theme-text-muted hover:text-violet-400 hover:bg-violet-500/10 transition-all"
                 >
                   <Plus className="w-4 h-4" />
                 </button>
@@ -640,13 +640,13 @@ export default function ProfilePage() {
                   {profile.education.map((edu, idx) => (
                     <div
                       key={idx}
-                      className="flex gap-4 items-start pb-4 border-b border-white/[0.06] last:border-0 last:pb-0"
+                      className="flex gap-4 items-start pb-4 border-b theme-border last:border-0 last:pb-0"
                     >
                       <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500/20 to-indigo-500/20 border border-violet-500/20 flex items-center justify-center shrink-0">
                         <BookOpen className="w-4 h-4 text-violet-400" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-white leading-tight">
+                        <p className="text-sm font-semibold theme-text-primary leading-tight">
                           {edu.school || 'School'}
                         </p>
                         <p className="text-[12px] text-violet-300/80 mt-0.5">
@@ -657,9 +657,9 @@ export default function ProfilePage() {
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-6 border border-dashed border-white/10 rounded-xl">
-                  <GraduationCap className="w-8 h-8 text-white/10 mx-auto mb-2" />
-                  <p className="text-xs text-white/25 mb-2">No education added yet</p>
+                <div className="text-center py-6 border border-dashed theme-border rounded-xl">
+                  <GraduationCap className="w-8 h-8 theme-text-muted mx-auto mb-2" />
+                  <p className="text-xs theme-text-secondary mb-2">No education added yet</p>
                   <button
                     onClick={() => setShowEditModal(true)}
                     className="text-xs text-violet-400 hover:text-violet-300 transition-colors"

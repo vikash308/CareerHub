@@ -114,52 +114,52 @@ export default function FeedPage() {
       .toUpperCase();
 
   return (
-    <div className="relative min-h-screen bg-[#0F172A]">
+    <div className="relative min-h-screen page-bg">
       <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none" aria-hidden="true">
-        <div className="blob-1 absolute top-[10%] left-[5%] w-[45%] h-[45%] rounded-full bg-indigo-500/10 blur-3xl" />
-        <div className="blob-2 absolute bottom-[15%] right-[5%] w-[40%] h-[40%] rounded-full bg-violet-500/10 blur-3xl" />
+        <div className="blob-1 absolute top-[10%] left-[5%] w-[45%] h-[45%] rounded-full bg-indigo-500/10 blur-3xl theme-blob" />
+        <div className="blob-2 absolute bottom-[15%] right-[5%] w-[40%] h-[40%] rounded-full bg-violet-500/10 blur-3xl theme-blob" />
       </div>
 
       <main className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
 
           <aside className="hidden lg:block lg:col-span-3 space-y-4 sticky top-24 h-fit">
-            <div className="bg-white/[0.04] backdrop-blur-xl border border-white/10 rounded-2xl overflow-hidden hover:border-white/20 transition-all duration-300 shadow-xl">
+            <div className="theme-card rounded-2xl overflow-hidden transition-all duration-300 shadow-xl">
               <div className="h-24 bg-gradient-to-r from-indigo-600/20 to-violet-600/20" />
               <div className="px-4 pb-5 -mt-10 flex flex-col items-center">
                 {user?.profilePicture ? (
                   <img
                     src={user.profilePicture}
                     alt={user.name}
-                    className="w-20 h-20 rounded-full border-4 border-[#0F172A] object-cover mb-3 shadow-lg"
+                    className="w-20 h-20 rounded-full border-4 border-[var(--background)] object-cover mb-3 shadow-lg"
                   />
                 ) : (
-                  <div className="w-20 h-20 rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center text-white text-xl font-bold border-4 border-[#0F172A] mb-3 shadow-lg select-none">
+                  <div className="w-20 h-20 rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center text-white text-xl font-bold border-4 border-[var(--background)] mb-3 shadow-lg select-none">
                     {user?.name ? getInitials(user.name) : 'CH'}
                   </div>
                 )}
 
-                <h2 className="text-lg font-bold text-white text-center leading-tight truncate w-full">
+                <h2 className="text-lg font-bold theme-text-primary text-center leading-tight truncate w-full">
                   {user?.name || 'User Name'}
                 </h2>
-                <p className="text-xs text-white/45 text-center mt-1 truncate w-full">
+                <p className="text-xs theme-text-muted text-center mt-1 truncate w-full">
                   @{user?.username || 'username'}
                 </p>
 
-                <div className="w-full border-t border-white/10 pt-4 mt-4 space-y-2">
+                <div className="w-full border-t theme-border pt-4 mt-4 space-y-2">
                   <div className="flex justify-between items-center px-1">
-                    <span className="text-xs text-white/45">Posts in feed</span>
-                    <span className="text-xs text-indigo-300 font-bold">{posts.length}</span>
+                    <span className="text-xs theme-text-secondary">Posts in feed</span>
+                    <span className="text-xs text-indigo-600 dark:text-indigo-300 font-bold">{posts.length}</span>
                   </div>
                   <div className="flex justify-between items-center px-1">
-                    <span className="text-xs text-white/45">Connections</span>
-                    <span className="text-xs text-indigo-300 font-bold">—</span>
+                    <span className="text-xs theme-text-secondary">Connections</span>
+                    <span className="text-xs text-indigo-600 dark:text-indigo-300 font-bold">—</span>
                   </div>
                 </div>
 
                 <Link
                   href="/profile"
-                  className="w-full mt-4 py-2 px-4 rounded-xl bg-white/[0.06] border border-white/10 text-white text-xs font-semibold hover:bg-white/10 hover:border-white/20 transition-all duration-200 text-center block"
+                  className="w-full mt-4 py-2 px-4 rounded-xl theme-btn-secondary text-xs font-semibold text-center block"
                 >
                   View Profile
                 </Link>
@@ -170,20 +170,20 @@ export default function FeedPage() {
           <section className="col-span-1 lg:col-span-6 space-y-5">
             <div className={`transition-all duration-300 ${
               showStickyWidget 
-                ? 'sticky top-24 z-20 shadow-2xl comment-section-enter bg-[#0F172A]/95 backdrop-blur-md p-1 rounded-2xl' 
+                ? 'sticky top-24 z-20 shadow-2xl comment-section-enter bg-[var(--background)]/95 backdrop-blur-md p-1 rounded-2xl' 
                 : ''
             }`}>
               <CreatePostWidget onPostCreated={fetchPosts} />
             </div>
 
             <div className="flex items-center justify-between px-1">
-              <h2 className="text-xs font-bold text-white/50 uppercase tracking-widest">
+              <h2 className="text-xs font-bold theme-text-muted uppercase tracking-widest">
                 Global Feed
               </h2>
               <button
                 onClick={fetchPosts}
                 disabled={isLoading}
-                className="flex items-center gap-1.5 text-[11px] text-white/40 hover:text-indigo-400 transition-colors disabled:opacity-40"
+                className="flex items-center gap-1.5 text-[11px] theme-text-secondary hover:text-indigo-500 transition-colors disabled:opacity-40"
                 aria-label="Refresh feed"
               >
                 <RefreshCw className={`w-3 h-3 ${isLoading ? 'animate-spin' : ''}`} />
@@ -215,9 +215,9 @@ export default function FeedPage() {
             {!isLoading && !fetchError && (
               <div className="space-y-5">
                 {posts.length === 0 ? (
-                  <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-10 text-center shadow-xl">
-                    <p className="text-sm text-white/40 font-semibold">No posts yet.</p>
-                    <p className="text-xs text-white/25 mt-1">Be the first to share something!</p>
+                  <div className="theme-card rounded-2xl p-10 text-center shadow-xl">
+                    <p className="text-sm theme-text-secondary font-semibold">No posts yet.</p>
+                    <p className="text-xs theme-text-muted mt-1">Be the first to share something!</p>
                   </div>
                 ) : (
                   posts.map((post, i) => (
@@ -233,26 +233,26 @@ export default function FeedPage() {
           </section>
 
           <aside className="hidden lg:block lg:col-span-3 space-y-4 sticky top-24 h-fit">
-            <div className="bg-white/[0.04] backdrop-blur-xl border border-white/10 rounded-2xl p-5 hover:border-white/20 transition-all duration-300 relative overflow-hidden group shadow-xl">
-              <div className="absolute -right-4 -top-4 w-24 h-24 bg-indigo-500/20 rounded-full blur-2xl group-hover:bg-indigo-500/30 transition-all duration-300" />
+            <div className="theme-card rounded-2xl p-5 hover:border-indigo-500/20 transition-all duration-300 relative overflow-hidden group shadow-xl">
+              <div className="absolute -right-4 -top-4 w-24 h-24 bg-indigo-500/20 rounded-full blur-2xl group-hover:bg-indigo-500/30 transition-all duration-300 theme-blob" />
 
               <div className="flex items-center gap-2 mb-4 relative z-10">
-                <Sparkles className="w-4 h-4 text-indigo-400" />
-                <h3 className="text-sm font-bold text-white">ATS Resume Scoring</h3>
+                <Sparkles className="w-4 h-4 text-indigo-500 dark:text-indigo-400" />
+                <h3 className="text-sm font-bold theme-text-primary">ATS Resume Scoring</h3>
               </div>
 
               <div className="flex flex-col items-center justify-center py-4 relative z-10">
-                <div className="relative w-24 h-24 flex items-center justify-center rounded-full border-4 border-white/5 mb-3 bg-black/10">
+                <div className="relative w-24 h-24 flex items-center justify-center rounded-full border-4 border-[var(--border)] mb-3 bg-black/5">
                   <svg className="absolute w-full h-full -rotate-90" viewBox="0 0 36 36">
                     <path
-                      className="text-white/5"
+                      className="text-slate-200 dark:text-white/5"
                       strokeWidth="2.5"
                       stroke="currentColor"
                       fill="none"
                       d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
                     />
                     <path
-                      className="text-indigo-400"
+                      className="text-indigo-600 dark:text-indigo-400"
                       strokeWidth="2.5"
                       strokeDasharray="78, 100"
                       strokeLinecap="round"
@@ -261,9 +261,9 @@ export default function FeedPage() {
                       d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
                     />
                   </svg>
-                  <span className="text-lg text-indigo-300 font-extrabold">78%</span>
+                  <span className="text-lg text-indigo-600 dark:text-indigo-300 font-extrabold">78%</span>
                 </div>
-                <p className="text-[11px] text-white/45 text-center px-2">
+                <p className="text-[11px] theme-text-secondary text-center px-2">
                   Powered by Gemini AI analysis.
                 </p>
               </div>
@@ -273,18 +273,18 @@ export default function FeedPage() {
               </button>
             </div>
 
-            <div className="bg-white/[0.04] backdrop-blur-xl border border-white/10 rounded-2xl p-4 hover:border-white/20 transition-all duration-300 shadow-xl">
-              <h3 className="text-xs font-bold text-white/60 uppercase tracking-widest px-1 mb-4">
+            <div className="theme-card rounded-2xl p-4 hover:border-indigo-500/20 transition-all duration-300 shadow-xl">
+              <h3 className="text-xs font-bold theme-text-muted uppercase tracking-widest px-1 mb-4">
                 People You May Know
               </h3>
 
               <div className="space-y-3">
                 {loadingSuggestions && (
-                  <div className="text-center py-4 text-xs text-white/30">Loading suggestions...</div>
+                  <div className="text-center py-4 text-xs theme-text-secondary">Loading suggestions...</div>
                 )}
                 
                 {!loadingSuggestions && recommendations.length === 0 && (
-                  <p className="text-center py-4 text-xs text-white/25">No new suggestions found.</p>
+                  <p className="text-center py-4 text-xs theme-text-muted">No new suggestions found.</p>
                 )}
 
                 {!loadingSuggestions && recommendations.map((profile) => {
@@ -294,7 +294,7 @@ export default function FeedPage() {
                   return (
                     <div
                       key={person._id}
-                      className="flex items-center justify-between p-2 hover:bg-white/[0.04] rounded-xl transition-all duration-150"
+                      className="flex items-center justify-between p-2 hover:bg-[var(--btn-sec-bg)] rounded-xl transition-all duration-150"
                     >
                       <div className="flex items-center gap-3 min-w-0">
                         {person.profilePicture ? (
@@ -309,8 +309,8 @@ export default function FeedPage() {
                           </div>
                         )}
                         <div className="min-w-0">
-                          <p className="text-xs font-bold text-white leading-tight truncate">{person.name}</p>
-                          <p className="text-[10px] text-white/45 mt-0.5 truncate">{profile.currentPost || 'Professional'}</p>
+                          <p className="text-xs font-bold theme-text-primary leading-tight truncate">{person.name}</p>
+                          <p className="text-[10px] theme-text-secondary mt-0.5 truncate">{profile.currentPost || 'Professional'}</p>
                         </div>
                       </div>
                       <button

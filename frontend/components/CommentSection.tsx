@@ -142,7 +142,7 @@ export default function CommentSection({
   };
 
   return (
-    <div className="comment-section-enter border-t border-white/[0.07] mt-3 pt-4 space-y-3">
+    <div className="comment-section-enter border-t theme-border mt-3 pt-4 space-y-3">
       {/* Comment Input */}
       <form onSubmit={handleSubmit} className="flex items-center gap-2.5">
         <div className="shrink-0">
@@ -150,16 +150,16 @@ export default function CommentSection({
             <img
               src={user.profilePicture}
               alt={user.name}
-              className="w-8 h-8 rounded-full object-cover border border-white/10"
+              className="w-8 h-8 rounded-full object-cover border border-[var(--border)]"
             />
           ) : (
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center text-white text-[10px] font-bold border border-white/10 select-none shrink-0">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center text-white text-[10px] font-bold border border-[var(--border)] select-none shrink-0">
               {user?.name ? getInitials(user.name) : 'U'}
             </div>
           )}
         </div>
 
-        <div className="flex-1 flex items-center gap-2 bg-white/[0.05] border border-white/10 rounded-xl px-3 py-1.5 focus-within:border-indigo-500/40 focus-within:bg-white/[0.07] transition-all duration-200">
+        <div className="flex-1 flex items-center gap-2 bg-[var(--input-bg)] border border-[var(--input-border)] rounded-xl px-3 py-1.5 focus-within:border-indigo-500/40 focus-within:bg-[var(--input-focus-bg)] transition-all duration-200">
           <input
             ref={inputRef}
             type="text"
@@ -167,7 +167,7 @@ export default function CommentSection({
             onChange={(e) => setCommentText(e.target.value)}
             placeholder="Write a comment..."
             maxLength={300}
-            className="flex-1 bg-transparent text-white text-xs placeholder-white/30 outline-none border-none focus:ring-0"
+            className="flex-1 bg-transparent theme-text-primary text-xs placeholder-[var(--text-muted)] outline-none border-none focus:ring-0"
             id={`comment-input-${postId}`}
             autoComplete="off"
           />
@@ -189,16 +189,16 @@ export default function CommentSection({
       {/* Loading State */}
       {isLoading && (
         <div className="flex items-center gap-2 py-2 pl-10">
-          <Loader2 className="w-3.5 h-3.5 animate-spin text-white/30" />
-          <span className="text-[11px] text-white/30">Loading comments...</span>
+          <Loader2 className="w-3.5 h-3.5 animate-spin theme-text-muted" />
+          <span className="text-[11px] theme-text-muted">Loading comments...</span>
         </div>
       )}
 
       {/* Empty State */}
       {!isLoading && comments.length === 0 && (
         <div className="flex items-center gap-2 py-2 pl-10">
-          <MessageSquare className="w-3.5 h-3.5 text-white/20" />
-          <span className="text-[11px] text-white/25">
+          <MessageSquare className="w-3.5 h-3.5 theme-text-muted" />
+          <span className="text-[11px] theme-text-muted">
             No comments yet. Be the first!
           </span>
         </div>
@@ -221,23 +221,23 @@ export default function CommentSection({
                     <img
                       src={comment.userId.profilePicture}
                       alt={comment.userId.name}
-                      className="w-7 h-7 rounded-full object-cover border border-white/10"
+                      className="w-7 h-7 rounded-full object-cover border border-[var(--border)]"
                     />
                   ) : (
-                    <div className="w-7 h-7 rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center text-white text-[9px] font-bold border border-white/10 select-none">
+                    <div className="w-7 h-7 rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center text-white text-[9px] font-bold border border-[var(--border)] select-none">
                       {getInitials(comment.userId.name)}
                     </div>
                   )}
                 </div>
 
                 {/* Bubble */}
-                <div className="flex-1 min-w-0 bg-white/[0.04] border border-white/[0.07] rounded-xl px-3 py-2">
+                <div className="flex-1 min-w-0 bg-[var(--btn-sec-bg)] border border-[var(--border)] rounded-xl px-3 py-2">
                   <div className="flex items-center justify-between gap-2 mb-0.5">
                     <div className="flex items-center gap-1.5 min-w-0">
-                      <span className="text-[11px] font-bold text-white/80 truncate">
+                      <span className="text-[11px] font-bold theme-text-primary truncate">
                         {comment.userId.name}
                       </span>
-                      <span className="text-[10px] text-white/30 shrink-0">
+                      <span className="text-[10px] theme-text-muted shrink-0">
                         @{comment.userId.username}
                       </span>
                     </div>
@@ -246,7 +246,7 @@ export default function CommentSection({
                         <button
                           onClick={() => handleDelete(comment._id)}
                           disabled={isDeleting}
-                          className="opacity-0 group-hover:opacity-100 text-white/30 hover:text-red-400 transition-all duration-150 disabled:opacity-30 active:scale-90"
+                          className="opacity-0 group-hover:opacity-100 theme-text-muted hover:theme-text-primary transition-all duration-150 disabled:opacity-30 active:scale-90"
                           aria-label="Delete comment"
                         >
                           {isDeleting ? (
@@ -258,7 +258,7 @@ export default function CommentSection({
                       )}
                     </div>
                   </div>
-                  <p className="text-xs text-white/65 leading-relaxed break-words">
+                  <p className="text-xs theme-text-secondary leading-relaxed break-words">
                     {comment.body}
                   </p>
                 </div>

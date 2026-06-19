@@ -53,7 +53,7 @@ export default function RootLayout({
       className={`${inter.variable} ${manrope.variable} h-full antialiased`}
       suppressHydrationWarning
     >
-      <body className="min-h-full flex flex-col bg-[#0F172A] text-slate-100 transition-colors duration-300">
+      <body className="min-h-full flex flex-col page-bg transition-colors duration-300">
         <StoreProvider>
           <ThemeProvider
             attribute="class"

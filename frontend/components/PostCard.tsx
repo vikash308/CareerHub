@@ -116,7 +116,7 @@ export default function PostCard({ post, animationDelay = 0 }: PostCardProps) {
 
   return (
     <article
-      className="post-card-enter bg-white/[0.04] backdrop-blur-xl border border-white/10 rounded-2xl p-5 hover:border-white/[0.18] hover:bg-white/[0.055] transition-all duration-300 shadow-xl group relative"
+      className="post-card-enter theme-card rounded-2xl p-5 hover:border-indigo-500/20 transition-all duration-300 shadow-xl group relative"
       style={{ animationDelay: `${animationDelay}ms` }}
     >
       <div className="flex gap-3 items-start mb-4">
@@ -125,20 +125,20 @@ export default function PostCard({ post, animationDelay = 0 }: PostCardProps) {
             <img
               src={post.userId.profilePicture}
               alt={post.userId.name}
-              className="w-11 h-11 rounded-full object-cover border border-white/10"
+              className="w-11 h-11 rounded-full object-cover border border-[var(--border)]"
             />
           ) : (
-            <div className="w-11 h-11 rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center text-white text-xs font-bold border border-white/10 select-none">
+            <div className="w-11 h-11 rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center text-white text-xs font-bold border border-[var(--border)] select-none">
               {getInitials(post.userId.name)}
             </div>
           )}
         </div>
 
         <div className="flex-1 min-w-0">
-          <h3 className="text-sm font-bold text-white leading-tight truncate">
+          <h3 className="text-sm font-bold theme-text-primary leading-tight truncate">
             {post.userId.name}
           </h3>
-          <p className="text-[11px] text-white/45 mt-0.5 truncate">
+          <p className="text-[11px] theme-text-muted mt-0.5 truncate">
             @{post.userId.username}&nbsp;·&nbsp;{formatRelativeTime(post.createdAt)}
           </p>
         </div>
@@ -147,14 +147,14 @@ export default function PostCard({ post, animationDelay = 0 }: PostCardProps) {
           <div className="relative ml-auto shrink-0">
             <button
               onClick={() => setMenuOpen((o) => !o)}
-              className="p-1.5 rounded-lg text-white/30 hover:text-white/70 hover:bg-white/[0.06] transition-all duration-150 opacity-0 group-hover:opacity-100"
+              className="p-1.5 rounded-lg theme-text-muted hover:theme-text-primary hover:bg-[var(--btn-sec-bg)] transition-all duration-150 opacity-0 group-hover:opacity-100"
               aria-label="Post options"
             >
               <MoreHorizontal className="w-4 h-4" />
             </button>
 
             {menuOpen && (
-              <div className="absolute right-0 top-8 z-30 bg-[#1a1d2e] border border-white/10 rounded-xl shadow-2xl overflow-hidden navbar-dropdown min-w-[130px]">
+              <div className="absolute right-0 top-8 z-30 bg-[var(--dropdown-bg)] border border-[var(--dropdown-border)] rounded-xl shadow-2xl overflow-hidden navbar-dropdown min-w-[130px]">
                 <button
                   onClick={handleDelete}
                   className="flex items-center gap-2 w-full px-4 py-2.5 text-xs text-red-400 hover:bg-red-500/10 transition-colors"
@@ -168,12 +168,12 @@ export default function PostCard({ post, animationDelay = 0 }: PostCardProps) {
         )}
       </div>
 
-      <p className="text-sm text-white/80 leading-relaxed whitespace-pre-wrap mb-4">
+      <p className="text-sm theme-text-secondary leading-relaxed whitespace-pre-wrap mb-4">
         {post.body}
       </p>
 
       {mediaUrl && (
-        <div className="rounded-xl overflow-hidden border border-white/10 mb-4 bg-black/30 max-h-80">
+        <div className="rounded-xl overflow-hidden border theme-border mb-4 bg-[var(--btn-sec-bg)] max-h-80">
           {(post.fileType && ['mp4', 'webm', 'ogg', 'quicktime', 'mov', 'avi', 'mkv'].includes(post.fileType)) || 
            (mediaUrl && mediaUrl.includes('/video/upload/')) ? (
             <video src={mediaUrl} controls className="w-full max-h-80 object-contain" />
@@ -183,13 +183,13 @@ export default function PostCard({ post, animationDelay = 0 }: PostCardProps) {
         </div>
       )}
 
-      <div className="flex justify-between items-center border-t border-white/5 pt-3.5 mt-1 text-white/40 text-xs">
+      <div className="flex justify-between items-center border-t theme-border pt-3.5 mt-1 theme-text-secondary text-xs">
         <div className="flex gap-4">
           <button
             onClick={handleLike}
             aria-label={`Like post - ${localLikes} likes`}
             className={`flex items-center gap-1.5 font-semibold transition-colors duration-150
-              ${liked ? 'text-indigo-400' : 'text-white/40 hover:text-indigo-400 cursor-pointer'}`}
+              ${liked ? 'text-indigo-500' : 'theme-text-secondary hover:text-indigo-500 cursor-pointer'}`}
           >
             <ThumbsUp
               className={`w-4 h-4 ${popAnim ? 'like-pop' : liked ? 'scale-110' : ''} transition-transform duration-150`}
@@ -201,13 +201,13 @@ export default function PostCard({ post, animationDelay = 0 }: PostCardProps) {
           <button
             onClick={() => setShowComments((v) => !v)}
             className={`flex items-center gap-1.5 cursor-pointer transition-colors font-semibold
-              ${showComments ? 'text-indigo-400' : 'hover:text-indigo-400'}`}
+              ${showComments ? 'text-indigo-500' : 'hover:text-indigo-500'}`}
             aria-label="Toggle comments"
           >
             <MessageSquare className={`w-4 h-4 transition-transform duration-200 ${showComments ? 'scale-110' : ''}`} />
             <span>Comment</span>
             {localCommentCount > 0 && (
-              <span className="text-[10px] opacity-90 bg-white/10 px-1.5 py-0.5 rounded-full font-medium">
+              <span className="text-[10px] opacity-90 bg-[var(--btn-sec-bg)] px-1.5 py-0.5 rounded-full font-medium">
                 {localCommentCount}
               </span>
             )}
@@ -216,7 +216,7 @@ export default function PostCard({ post, animationDelay = 0 }: PostCardProps) {
 
         <button
           onClick={handleShare}
-          className="flex items-center gap-1.5 hover:text-indigo-400 cursor-pointer transition-colors font-semibold"
+          className="flex items-center gap-1.5 hover:text-indigo-500 cursor-pointer transition-colors font-semibold"
           aria-label="Share post"
         >
           <Share2 className="w-4 h-4" />
