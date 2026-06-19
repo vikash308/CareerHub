@@ -6,6 +6,7 @@ import crypto from 'crypto'
 import PDFDocument from 'pdfkit'
 import fs from 'fs';
 import ConnectionRequest from '../models/connectionModel.js'
+import Job from '../models/jobModel.js'
 
 
 const convertUserDataToPDF = async (userData) => {
@@ -140,10 +141,8 @@ export const updateUserProfile = async (req, res) => {
         const { username, email } = newUserData;
         const existingUser = await User.findOne({ $or: [{ username }, { email }] });
 
-        if (existingUser) {
-            if (existingUser || String(existingUser._id) !== String(user._id)) {
-                return res.status(400).json({ message: "user already exists" });
-            }
+        if (existingUser && String(existingUser._id) !== String(user._id)) {
+            return res.status(400).json({ message: "user already exists" });
         }
         Object.assign(user, newUserData);
         await user.save();
@@ -319,3 +318,63 @@ export const acceptConnectionRequest = async (req, res) => {
         return res.status(500).json({ message: error.message })
     }
 }
+
+export const changePassword = async (req, res) => {
+    const { token, currentPassword, newPassword } = req.body;
+    try {
+        const user = await User.findOne({ token });
+        if (!user) return res.status(404).json({ message: "User not found" });
+
+        const isMatch = await bcrypt.compare(currentPassword, user.password);
+        if (!isMatch) return res.status(400).json({ message: "Incorrect current password" });
+
+        if (!newPassword || newPassword.length < 6) {
+            return res.status(400).json({ message: "New password must be at least 6 characters long" });
+        }
+
+        user.password = await bcrypt.hash(newPassword, 10);
+        await user.save();
+
+        return res.json({ message: "Password updated successfully" });
+    } catch (error) {
+        return res.status(500).json({ message: error.message });
+    }
+};
+
+export const deleteUserAccount = async (req, res) => {
+    const { token } = req.body;
+    try {
+        const user = await User.findOne({ token });
+        if (!user) return res.status(404).json({ message: "User not found" });
+
+        // Delete profile
+        await Profile.deleteOne({ userId: user._id });
+
+        // Delete connection requests
+        await ConnectionRequest.deleteMany({
+            $or: [{ userId: user._id }, { connectionId: user._id }]
+        });
+
+        // Delete user's posts
+        await Post.deleteMany({ userId: user._id });
+
+        // Delete user's comments
+        await Comment.deleteMany({ userId: user._id });
+
+        // Delete user's created jobs
+        await Job.deleteMany({ postedBy: user._id });
+
+        // Remove user from applicants list in other jobs
+        await Job.updateMany(
+            { applicants: user._id },
+            { $pull: { applicants: user._id } }
+        );
+
+        // Delete user
+        await User.deleteOne({ _id: user._id });
+
+        return res.json({ message: "Account deleted successfully" });
+    } catch (error) {
+        return res.status(500).json({ message: error.message });
+    }
+};
