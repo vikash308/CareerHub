@@ -7,7 +7,17 @@ import postRoutes from './routes/postRoutes.js';
 import jobRoutes from './routes/jobRoutes.js';
 
 const app = express();
-app.use(cors());
+
+const allowedOrigins = [
+    process.env.FRONTEND_URL,
+    'http://localhost:3000'
+].filter(Boolean);
+
+app.use(cors({
+    origin: allowedOrigins.length > 0 ? allowedOrigins : '*',
+    credentials: true
+}));
+
 app.use(express.json());
 
 app.use(userRoutes);
@@ -16,8 +26,9 @@ app.use(jobRoutes);
 
 const start = async () => {
     await mongoose.connect(process.env.MONGO_URI);
-    app.listen(9090, () => {
-        console.log('Server running on port 9090');
+    const PORT = process.env.PORT || 9090;
+    app.listen(PORT, () => {
+        console.log(`Server running on port ${PORT}`);
     });
 };
 
