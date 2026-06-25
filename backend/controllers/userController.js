@@ -9,32 +9,241 @@ import ConnectionRequest from '../models/connectionModel.js'
 import Job from '../models/jobModel.js'
 
 
-const convertUserDataToPDF = async (userData) => {
+const convertUserDataToPDF = async (userData, res) => {
+    // Enable page buffering to allow writing footers like "Page X of Y" after generation
+    const doc = new PDFDocument({ margin: 50, size: 'A4', bufferPages: true });
 
-    const doc = new PDFDocument();
+    // Pipe the PDF document directly to the response object
+    doc.pipe(res);
 
-    const outputPath = crypto.randomBytes(32).toString("hex") + ".pdf";
-    const stream = fs.createWriteStream("uploads/" + outputPath)
+    // Profile picture handling: download from Cloudinary if it's a URL
+    let imageBuffer = null;
+    if (userData.userId && userData.userId.profilePicture) {
+        const pic = userData.userId.profilePicture;
+        if (pic.startsWith('http://') || pic.startsWith('https://')) {
+            try {
+                const imgRes = await fetch(pic);
+                if (imgRes.ok) {
+                    const arrayBuf = await imgRes.arrayBuffer();
+                    imageBuffer = Buffer.from(arrayBuf);
+                }
+            } catch (err) {
+                console.error("Failed to fetch profile picture for PDF:", err);
+            }
+        } else {
+            // Local path - check if file exists
+            const localPath = "uploads/" + pic;
+            if (fs.existsSync(localPath)) {
+                try {
+                    imageBuffer = fs.readFileSync(localPath);
+                } catch (err) {
+                    console.error("Failed to read local profile picture:", err);
+                }
+            }
+        }
+    }
 
-    doc.pipe(stream)
+    // --- Premium CV Colors ---
+    const primaryColor = '#4F46E5';    // Indigo 600 (Accent)
+    const textColor = '#1F2937';       // Gray 800 (Primary text)
+    const secondaryTextColor = '#4B5563'; // Gray 600 (Subtext)
+    const mutedTextColor = '#9CA3AF';   // Gray 400 (Muted / borders)
+    const accentLine = '#E5E7EB';       // Gray 200 (Dividers)
 
-    doc.image(`/uploads/${userData.userId.profilePicture}`, { align: " center", width: 100 });
-    doc.fontSize(14).text(`Name: ${userData.userId.name}`)
-    doc.fontSize(14).text(`Username: ${userData.userId.username}`);
-    doc.fontSize(14).text(`Email: ${userData.userId.email}`);
-    doc.fontSize(14).text(`Bio: ${userData.userId.bio}`)
-    doc.fontSize(14).text(`Current Position ${userData.currentPost}`)
-    doc.fontSize(14).text("Past Work")
-    userData.pastWork.forEach((work, index) => {
-        doc.fontSize(14).text(`Company Name: ${work.company}`)
-        doc.fontSize(14).text(`Position: ${work.position} `)
-        doc.fontSize(14).text(`years ${work.years}`)
-    })
+    let currentY = 50;
 
-    doc.end()
+    // Header layout
+    if (imageBuffer) {
+        try {
+            // Draw profile image cropped in a perfect circle
+            doc.save();
+            doc.circle(90, 90, 40).clip();
+            doc.image(imageBuffer, 50, 50, { width: 80, height: 80 });
+            doc.restore();
+            
+            // Draw a subtle border circle around the cropped image
+            doc.circle(90, 90, 40).lineWidth(1.5).stroke(primaryColor);
+        } catch (e) {
+            console.error("PDFKit error drawing profile image:", e);
+        }
+    }
 
-    return outputPath;
+    // Name & Title Header
+    const textStartX = imageBuffer ? 150 : 50;
+    
+    doc.fillColor(primaryColor)
+       .font('Helvetica-Bold')
+       .fontSize(24)
+       .text(userData.userId?.name || 'Professional Candidate', textStartX, 55);
 
+    doc.fillColor(secondaryTextColor)
+       .font('Helvetica-Oblique')
+       .fontSize(12)
+       .text(userData.currentPost || 'Professional Profile', textStartX, 82);
+
+    // Contact info (Email, username)
+    const email = userData.userId?.email || '';
+    const username = userData.userId?.username ? `careerhub.com/in/${userData.userId.username}` : '';
+    const contactInfo = [username, email].filter(Boolean).join('   |   ');
+
+    doc.fillColor(mutedTextColor)
+       .font('Helvetica')
+       .fontSize(9)
+       .text(contactInfo, textStartX, 105);
+
+    currentY = 150;
+
+    // Helper function to draw a section header
+    const drawSectionHeader = (title, y) => {
+        // Draw Accent block
+        doc.rect(50, y, 4, 16).fill(primaryColor);
+        
+        doc.fillColor(primaryColor)
+           .font('Helvetica-Bold')
+           .fontSize(12)
+           .text(title, 62, y + 2);
+
+        // Draw horizontal divider line
+        doc.moveTo(50, y + 22).lineTo(545, y + 22).stroke(accentLine);
+        return y + 32;
+    };
+
+    // --- BIO SUMMARY SECTION ---
+    if (userData.bio) {
+        currentY = drawSectionHeader('PROFESSIONAL SUMMARY', currentY);
+        
+        doc.fillColor(textColor)
+           .font('Helvetica')
+           .fontSize(10)
+           .text(userData.bio, 50, currentY, { width: 495, align: 'justify', lineGap: 3 });
+        
+        currentY += doc.heightOfString(userData.bio, { width: 495, lineGap: 3 }) + 25;
+    }
+
+    // --- WORK EXPERIENCE SECTION ---
+    currentY = drawSectionHeader('WORK EXPERIENCE', currentY);
+
+    if (userData.pastWork && userData.pastWork.length > 0) {
+        const timelineX = 58;
+        const timelineStartY = currentY + 5;
+        let timelineEndY = currentY;
+
+        userData.pastWork.forEach((work, index) => {
+            if (currentY > 730) {
+                doc.addPage();
+                currentY = 50;
+            }
+
+            doc.circle(timelineX, currentY + 5, 3.5).fill(primaryColor);
+            timelineEndY = currentY + 5;
+
+            // Role / Position
+            doc.fillColor(textColor)
+               .font('Helvetica-Bold')
+               .fontSize(11)
+               .text(work.position || 'Position', 72, currentY);
+
+            // Company Name
+            doc.fillColor(secondaryTextColor)
+               .font('Helvetica-Bold')
+               .fontSize(10)
+               .text(work.company || 'Company', 72, currentY + 14);
+
+            // Duration (Years) aligned to the right
+            doc.fillColor(secondaryTextColor)
+               .font('Helvetica')
+               .fontSize(9)
+               .text(work.years || '', 350, currentY + 2, { width: 195, align: 'right' });
+
+            currentY += 45;
+        });
+
+        // Draw the vertical timeline line behind the nodes
+        doc.save();
+        doc.moveTo(timelineX, timelineStartY)
+           .lineTo(timelineX, timelineEndY)
+           .lineWidth(1)
+           .stroke(accentLine);
+        doc.restore();
+    } else {
+        doc.fillColor(secondaryTextColor)
+           .font('Helvetica-Oblique')
+           .fontSize(10)
+           .text('No work experience listed.', 50, currentY);
+        currentY += 25;
+    }
+
+    currentY += 15;
+
+    // --- EDUCATION SECTION ---
+    if (currentY > 730) {
+        doc.addPage();
+        currentY = 50;
+    }
+    
+    currentY = drawSectionHeader('EDUCATION', currentY);
+
+    if (userData.education && userData.education.length > 0) {
+        const timelineX = 58;
+        const timelineStartY = currentY + 5;
+        let timelineEndY = currentY;
+
+        userData.education.forEach((edu, index) => {
+            if (currentY > 730) {
+                doc.addPage();
+                currentY = 50;
+            }
+
+            doc.circle(timelineX, currentY + 5, 3.5).fill(primaryColor);
+            timelineEndY = currentY + 5;
+
+            // School / University
+            doc.fillColor(textColor)
+               .font('Helvetica-Bold')
+               .fontSize(11)
+               .text(edu.school || 'School/University', 72, currentY);
+
+            // Degree & Field
+            const degreeText = [edu.degree, edu.fieldOfStudy].filter(Boolean).join(' in ');
+            doc.fillColor(secondaryTextColor)
+               .font('Helvetica')
+               .fontSize(10)
+               .text(degreeText || 'Degree Details', 72, currentY + 14);
+
+            currentY += 45;
+        });
+
+        // Draw vertical education timeline line
+        doc.save();
+        doc.moveTo(timelineX, timelineStartY)
+           .lineTo(timelineX, timelineEndY)
+           .lineWidth(1)
+           .stroke(accentLine);
+        doc.restore();
+    } else {
+        doc.fillColor(secondaryTextColor)
+           .font('Helvetica-Oblique')
+           .fontSize(10)
+           .text('No education details listed.', 50, currentY);
+        currentY += 25;
+    }
+
+    // Add footer page numbers
+    let pages = doc.bufferedPageRange();
+    for (let i = 0; i < pages.count; i++) {
+        doc.switchToPage(i);
+        doc.fillColor(mutedTextColor)
+           .font('Helvetica')
+           .fontSize(8)
+           .text(
+               `Page ${i + 1} of ${pages.count}`,
+               50,
+               800,
+               { align: 'center', width: 512 }
+           );
+    }
+
+    doc.end();
 }
 
 export const register = async (req, res) => {
@@ -155,8 +364,14 @@ export const updateUserProfile = async (req, res) => {
 export const getUserAndProfile = async (req, res) => {
     try {
         const token = req.body?.token || req.query.token || req.headers['x-auth-token'];
+        const userIdQuery = req.query.userId || req.body?.userId;
 
-        const user = await User.findOne({ token: token });
+        let user;
+        if (userIdQuery) {
+            user = await User.findOne({ _id: userIdQuery });
+        } else {
+            user = await User.findOne({ token: token });
+        }
 
         if (!user) {
             return res.status(404).json({ message: "user not found" });
@@ -211,12 +426,22 @@ export const getAllUserProfile = async (req, res) => {
 export const downloadProfile = async (req, res) => {
     try {
         const user_id = req.query.id;
-        const userProfile = await Profile.findOne({ userId: user_id }).populate('userId', 'name username email profilePicture')
-        let outputPath = await convertUserDataToPDF(userProfile);
+        const userProfile = await Profile.findOne({ userId: user_id }).populate('userId', 'name username email profilePicture');
+        
+        if (!userProfile) {
+            return res.status(404).json({ message: "Profile not found" });
+        }
 
-        return res.json({ message: outputPath })
+        // Set response headers for direct attachment download
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename="${userProfile.userId?.name || 'resume'}_resume.pdf"`);
+
+        await convertUserDataToPDF(userProfile, res);
     } catch (error) {
-        return res.status(500).json({ message: error.message })
+        if (res.headersSent) {
+            return;
+        }
+        return res.status(500).json({ message: error.message });
     }
 }
 
@@ -376,5 +601,105 @@ export const deleteUserAccount = async (req, res) => {
         return res.json({ message: "Account deleted successfully" });
     } catch (error) {
         return res.status(500).json({ message: error.message });
+    }
+};
+
+export const atsAnalyze = async (req, res) => {
+    try {
+        const { token, jobDescription } = req.body;
+        if (!jobDescription) {
+            return res.status(400).json({ message: "Job description is required" });
+        }
+
+        const user = await User.findOne({ token });
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        const profile = await Profile.findOne({ userId: user._id });
+        if (!profile) {
+            return res.status(404).json({ message: "Profile not found" });
+        }
+
+        const apiKey = process.env.GEMINI_API_KEY;
+
+        // If API key is missing, return error with a clean message (do not return fake simulated data)
+        if (!apiKey) {
+            console.log("GEMINI_API_KEY is not configured. Refusing to analyze.");
+            return res.status(400).json({
+                error: "GEMINI_KEY_MISSING",
+                message: "Google Gemini API Key is not configured in the backend environment. Please configure it to enable the ATS analysis feature."
+            });
+        }
+
+        // Prepare prompt for Gemini API
+        const profileDetails = {
+            name: user.name,
+            bio: profile.bio || "No biography provided",
+            headline: profile.currentPost || "No professional headline",
+            pastWork: profile.pastWork || [],
+            education: profile.education || []
+        };
+
+        const promptText = `
+You are an advanced ATS (Applicant Tracking System) resume analyzer. Analyze the following candidate profile details against the provided job description.
+Identify the matching skills, missing skills, and give concrete suggestions on how the candidate can optimize their profile to rank higher for this specific role.
+
+Candidate Profile Details:
+${JSON.stringify(profileDetails, null, 2)}
+
+Target Job Description:
+${jobDescription}
+
+Please respond strictly with a valid JSON object matching this schema (do not include markdown wrapping or backticks in the response, just raw JSON):
+{
+  "score": 75, // A number between 0 and 100 representing how well the profile matches the job description
+  "matchedSkills": ["SkillA", "SkillB"], // Key skills found in the profile that match the job description
+  "missingSkills": ["SkillC", "SkillD"], // Key skills/requirements from the job description missing or weak in the profile
+  "suggestions": ["Suggestion 1", "Suggestion 2"] // Specific, actionable tips to improve the profile for this role
+}
+`;
+
+        const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+        
+        const response = await fetch(geminiUrl, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                contents: [{
+                    parts: [{
+                        text: promptText
+                    }]
+                }],
+                generationConfig: {
+                    responseMimeType: "application/json"
+                }
+            })
+        });
+
+        if (!response.ok) {
+            const errText = await response.text();
+            throw new Error(`Gemini API Error: ${response.status} - ${errText}`);
+        }
+
+        const data = await response.json();
+        const responseText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+        
+        if (!responseText) {
+            throw new Error("Empty response from Gemini API");
+        }
+
+        // Parse the JSON response
+        const analysisResult = JSON.parse(responseText.trim());
+        return res.json({
+            isMock: false,
+            ...analysisResult
+        });
+
+    } catch (error) {
+        console.error("ATS analysis error:", error);
+        return res.status(500).json({ message: "ATS analysis failed: " + error.message });
     }
 };

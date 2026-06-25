@@ -1,5 +1,7 @@
 # 🚀 CareerHub - Professional Networking & Job Portal
 
+**🔗 Live Demo:** [career-hub-three-kappa.vercel.app](https://career-hub-three-kappa.vercel.app/)
+
 CareerHub is a premium, full-stack professional networking and job search platform. Built using **Next.js 16 (React 19)** on the frontend and **Node.js/Express** on the backend, it enables users to build professional profiles, upload resumes, connect with other professionals, create posts/articles, and search & apply for jobs.
 
 ---

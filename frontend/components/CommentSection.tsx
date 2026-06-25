@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, FormEvent } from 'react';
+import Link from 'next/link';
 import { Send, Trash2, Loader2, MessageSquare } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { useAppSelector } from '../store/hooks';
@@ -216,7 +217,7 @@ export default function CommentSection({
                 className="group flex items-start gap-2.5 comment-item-enter"
               >
                 {/* Avatar */}
-                <div className="shrink-0">
+                <Link href={`/profile?id=${comment.userId._id}`} className="shrink-0 cursor-pointer hover:opacity-80 transition-opacity">
                   {comment.userId.profilePicture ? (
                     <img
                       src={comment.userId.profilePicture}
@@ -228,15 +229,17 @@ export default function CommentSection({
                       {getInitials(comment.userId.name)}
                     </div>
                   )}
-                </div>
+                </Link>
 
                 {/* Bubble */}
                 <div className="flex-1 min-w-0 bg-[var(--btn-sec-bg)] border border-[var(--border)] rounded-xl px-3 py-2">
                   <div className="flex items-center justify-between gap-2 mb-0.5">
                     <div className="flex items-center gap-1.5 min-w-0">
-                      <span className="text-[11px] font-bold theme-text-primary truncate">
-                        {comment.userId.name}
-                      </span>
+                      <Link href={`/profile?id=${comment.userId._id}`} className="hover:underline block truncate">
+                        <span className="text-[11px] font-bold theme-text-primary">
+                          {comment.userId.name}
+                        </span>
+                      </Link>
                       <span className="text-[10px] theme-text-muted shrink-0">
                         @{comment.userId.username}
                       </span>

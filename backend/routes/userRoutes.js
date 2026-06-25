@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { acceptConnectionRequest, changePassword, deleteUserAccount, downloadProfile, getAllUserProfile, getMyConnectionRequests, getUserAndProfile, login, register, sendConnectionRequest, updateProfileData, updateUserProfile, uploadProfilePicture, whatAreMyConnection } from "../controllers/userController.js";
+import { acceptConnectionRequest, atsAnalyze, changePassword, deleteUserAccount, downloadProfile, getAllUserProfile, getMyConnectionRequests, getUserAndProfile, login, register, sendConnectionRequest, updateProfileData, updateUserProfile, uploadProfilePicture, whatAreMyConnection } from "../controllers/userController.js";
 import { uploadToCloudinary } from "../config/cloudinary.js";
 
 const router = Router();
@@ -20,5 +20,6 @@ router.route("/user/user_connection_request").get(whatAreMyConnection)
 router.route("/user/accept_connection_request").post(acceptConnectionRequest);
 router.route("/user/change_password").post(changePassword);
 router.route("/user/delete_account").post(deleteUserAccount);
+router.route("/user/ats_analyze").post(atsAnalyze);
 
 export default router;

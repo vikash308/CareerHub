@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { setMyProfile, updateMyProfileData } from '../../store/profileSlice';
 import { updateUser } from '../../store/authSlice';
@@ -22,8 +23,17 @@ import {
   Building2,
   BookOpen,
   ChevronRight,
+  Sparkles,
+  FileText,
+  Download,
+  AlertCircle,
+  ThumbsUp,
+  MessageSquare,
 } from 'lucide-react';
 import { toast } from 'react-toastify';
+import PostDetailModal from '../../components/PostDetailModal';
+import { likePost } from '../../store/postSlice';
+import { Post } from '../../store/types';
 
 // ─── Helpers ───────────────────────────────────────────────────────────────
 
@@ -34,6 +44,35 @@ function getInitials(name: string): string {
     .join('')
     .slice(0, 2)
     .toUpperCase();
+}
+
+function formatRelativeTime(isoDate: string): string {
+  const diff = Date.now() - new Date(isoDate).getTime();
+  const minutes = Math.floor(diff / 60_000);
+  if (minutes < 1) return 'Just now';
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  return `${days}d ago`;
+}
+
+const LS_KEY = 'ch_liked_posts';
+
+function getLikedSet(): Set<string> {
+  if (typeof window === 'undefined') return new Set();
+  try {
+    const raw = localStorage.getItem(LS_KEY);
+    return new Set(raw ? JSON.parse(raw) : []);
+  } catch {
+    return new Set();
+  }
+}
+
+function persistLike(postId: string) {
+  const set = getLikedSet();
+  set.add(postId);
+  localStorage.setItem(LS_KEY, JSON.stringify([...set]));
 }
 
 // ─── Edit Profile Modal ──────────────────────────────────────────────────
@@ -345,8 +384,10 @@ function EditProfileModal({ profile, onClose, onSaved }: EditProfileModalProps) 
 
 // ─── Main Profile Page ───────────────────────────────────────────────────
 
-export default function ProfilePage() {
+export function ProfileContent() {
   const dispatch = useAppDispatch();
+  const searchParams = useSearchParams();
+  const userIdQuery = searchParams.get('id');
   const { user } = useAppSelector((s) => s.auth);
   const { myProfile } = useAppSelector((s) => s.profile);
 
@@ -355,15 +396,134 @@ export default function ProfilePage() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
 
+  const [profileData, setProfileData] = useState<Profile | null>(null);
+  const [userPosts, setUserPosts] = useState<any[]>([]);
+
+  const [selectedPostForModal, setSelectedPostForModal] = useState<Post | null>(null);
+  const [selectedPostLiked, setSelectedPostLiked] = useState(false);
+  const [selectedPostLikesCount, setSelectedPostLikesCount] = useState(0);
+  const [selectedPostCommentCount, setSelectedPostCommentCount] = useState(0);
+
+  const [jobDescription, setJobDescription] = useState('');
+  const [atsResult, setAtsResult] = useState<any>(null);
+  const [atsError, setAtsError] = useState<string | null>(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
+
+  const profile = profileData;
+  const profileUser = profile?.userId;
+  const isOwnProfile = !userIdQuery || user?._id === profileUser?._id;
+
+  const handleDownloadResume = async () => {
+    if (!profileUser?._id) return;
+    setIsDownloading(true);
+    try {
+      await api.downloadResume(profileUser._id);
+      toast.success('Resume downloaded successfully!');
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to download resume.');
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
+  const handleAtsAnalyze = async () => {
+    if (!jobDescription.trim()) {
+      toast.warning('Please enter a job description to analyze.');
+      return;
+    }
+    setIsAnalyzing(true);
+    setAtsResult(null);
+    setAtsError(null);
+    try {
+      const result = await api.atsAnalyze(jobDescription);
+      if (result && typeof result.score === 'number') {
+        setAtsResult(result);
+        toast.success('ATS analysis completed!');
+      } else {
+        setAtsError(result.message || 'Failed to analyze profile.');
+        toast.error(result.message || 'Failed to analyze profile.');
+      }
+    } catch {
+      setAtsError('Network error during ATS analysis.');
+      toast.error('Network error during ATS analysis.');
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
   const avatarInputRef = useRef<HTMLInputElement>(null);
+
+  const handleMiniPostClick = (post: any) => {
+    setSelectedPostForModal(post);
+    setSelectedPostLiked(getLikedSet().has(post._id));
+    setSelectedPostLikesCount(post.likes);
+    setSelectedPostCommentCount(post.commentCount || 0);
+  };
+
+  const handleModalLike = async () => {
+    if (!selectedPostForModal || selectedPostLiked) return;
+
+    const postId = selectedPostForModal._id;
+    setSelectedPostLiked(true);
+    setSelectedPostLikesCount((prev) => prev + 1);
+    persistLike(postId);
+    dispatch(likePost({ postId }));
+
+    // Sync with userPosts array
+    setUserPosts((prev) =>
+      prev.map((p) => (p._id === postId ? { ...p, likes: p.likes + 1 } : p))
+    );
+
+    try {
+      await api.likePost(postId);
+    } catch {
+      setSelectedPostLiked(false);
+      setSelectedPostLikesCount((prev) => prev - 1);
+      const set = getLikedSet();
+      set.delete(postId);
+      localStorage.setItem(LS_KEY, JSON.stringify([...set]));
+      setUserPosts((prev) =>
+        prev.map((p) => (p._id === postId ? { ...p, likes: p.likes - 1 } : p))
+      );
+    }
+  };
+
+  const handleModalCommentCountChange = (count: number) => {
+    if (!selectedPostForModal) return;
+    const postId = selectedPostForModal._id;
+    setSelectedPostCommentCount(count);
+    
+    // Sync with userPosts array
+    setUserPosts((prev) =>
+      prev.map((p) => (p._id === postId ? { ...p, commentCount: count } : p))
+    );
+  };
 
   const fetchProfile = async () => {
     setIsLoading(true);
     setFetchError(null);
     try {
-      const data = await api.getUserAndProfile();
+      const targetUserId = userIdQuery || undefined;
+      const data = await api.getUserAndProfile(targetUserId);
       if (data && data.userId) {
-        dispatch(setMyProfile(data));
+        setProfileData(data);
+        if (!targetUserId) {
+          dispatch(setMyProfile(data));
+        }
+
+        // Fetch user posts
+        try {
+          const postsRes = await api.getAllPosts();
+          if (postsRes && Array.isArray(postsRes.posts)) {
+            const filtered = postsRes.posts
+              .filter((p: any) => p.userId && p.userId._id === data.userId._id)
+              .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+            setUserPosts(filtered);
+          }
+        } catch (err) {
+          console.error("Error fetching user posts:", err);
+        }
       } else {
         setFetchError(data?.message || 'Could not load profile.');
       }
@@ -377,7 +537,7 @@ export default function ProfilePage() {
   useEffect(() => {
     fetchProfile();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [userIdQuery]);
 
   // ── Avatar Upload Handler ──────────────────────────────────────────────
   const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -416,8 +576,7 @@ export default function ProfilePage() {
     }
   };
 
-  const profile = myProfile as Profile | null;
-  const profileUser = profile?.userId;
+
 
   return (
     <div className="relative min-h-screen page-bg">
@@ -472,7 +631,7 @@ export default function ProfilePage() {
                   <div className="relative w-fit">
                     <div
                       className="relative group cursor-pointer"
-                      onClick={() => avatarInputRef.current?.click()}
+                      onClick={() => isOwnProfile && avatarInputRef.current?.click()}
                     >
                       {profileUser?.profilePicture || user?.profilePicture ? (
                         <img
@@ -487,13 +646,15 @@ export default function ProfilePage() {
                       )}
 
                       {/* Hover overlay */}
-                      <div className="absolute inset-0 rounded-full bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center">
-                        {uploadingAvatar ? (
-                          <Loader2 className="w-6 h-6 text-white animate-spin" />
-                        ) : (
-                          <Camera className="w-6 h-6 text-white" />
-                        )}
-                      </div>
+                      {isOwnProfile && (
+                        <div className="absolute inset-0 rounded-full bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center">
+                          {uploadingAvatar ? (
+                            <Loader2 className="w-6 h-6 text-white animate-spin" />
+                          ) : (
+                            <Camera className="w-6 h-6 text-white" />
+                          )}
+                        </div>
+                      )}
                     </div>
 
                     <input
@@ -558,6 +719,279 @@ export default function ProfilePage() {
                   </button>
                 )}
               </div>
+            </div>
+
+            {/* ── Resume Toolkit Card ── */}
+            <div className="theme-card rounded-2xl p-5 sm:p-6 shadow-xl space-y-6">
+              <div className="flex items-center gap-2 pb-4 border-b theme-border">
+                <div className="p-2 rounded-lg bg-indigo-500/10 border border-indigo-500/20">
+                  <Sparkles className="w-4 h-4 text-indigo-400" />
+                </div>
+                <h2 className="text-sm font-bold theme-text-primary">Resume Toolkit</h2>
+              </div>
+
+              <div className={isOwnProfile ? "grid grid-cols-1 md:grid-cols-3 gap-6" : "grid grid-cols-1 gap-6"}>
+                {/* PDF Generation section */}
+                <div className={isOwnProfile ? "md:col-span-1 space-y-3 bg-[var(--btn-sec-bg)] border border-[var(--border)] rounded-2xl p-4 flex flex-col justify-between" : "space-y-3 bg-[var(--btn-sec-bg)] border border-[var(--border)] rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4 w-full"}>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <FileText className="w-4 h-4 text-indigo-400" />
+                      <h3 className="text-xs font-bold theme-text-primary uppercase tracking-wider">Export Resume</h3>
+                    </div>
+                    <p className="text-[11px] theme-text-secondary leading-relaxed">
+                      Download a clean, professionally formatted PDF resume compiled directly from {isOwnProfile ? 'your' : `${profileUser?.name}'s`} profile data.
+                    </p>
+                  </div>
+                  <button
+                    onClick={handleDownloadResume}
+                    disabled={isDownloading}
+                    className={isOwnProfile ? "w-full mt-4 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md shadow-indigo-600/10 cursor-pointer" : "sm:w-fit flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md shadow-indigo-600/10 cursor-pointer shrink-0"}
+                  >
+                    {isDownloading ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        Generating...
+                      </>
+                    ) : (
+                      <>
+                        <Download className="w-3.5 h-3.5" />
+                        Download PDF
+                      </>
+                    )}
+                  </button>
+                </div>
+
+                {/* ATS Scan Section */}
+                {isOwnProfile && (
+                  <div className="md:col-span-2 space-y-3">
+                    <div className="space-y-1">
+                      <h3 className="text-xs font-bold theme-text-primary uppercase tracking-wider flex items-center gap-1.5">
+                        ATS Job Description Scanner
+                      </h3>
+                      <p className="text-[11px] theme-text-secondary leading-relaxed">
+                        Paste a target job description below to verify how well your profile aligns with the role and get optimization tips.
+                      </p>
+                    </div>
+
+                    <div className="space-y-3">
+                      <textarea
+                        value={jobDescription}
+                        onChange={(e) => setJobDescription(e.target.value)}
+                        rows={4}
+                        className="w-full theme-input rounded-xl px-3 py-2 text-xs placeholder-[var(--text-muted)] focus:outline-none transition-all resize-none font-mono"
+                        placeholder="Paste target job description requirements here..."
+                      />
+
+                      <button
+                        onClick={handleAtsAnalyze}
+                        disabled={isAnalyzing}
+                        className="flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                      >
+                        {isAnalyzing ? (
+                          <>
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            Analyzing Profile...
+                          </>
+                        ) : (
+                          <>
+                            <Sparkles className="w-3.5 h-3.5" />
+                            Scan Profile Match
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* ATS Error Banner */}
+              {atsError && (
+                <div className="mt-6 flex items-start gap-2.5 p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-400 fade-in">
+                  <AlertCircle className="w-4.5 h-4.5 shrink-0 mt-0.5" />
+                  <div>
+                    <span className="font-bold">ATS Scanner Message:</span> {atsError}
+                  </div>
+                </div>
+              )}
+
+              {/* ATS Results View (Only shown if a valid result is returned) */}
+              {atsResult && (
+                <div className="mt-6 border-t theme-border pt-6 space-y-5 fade-in">
+                  <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 bg-[var(--btn-sec-bg)] border border-[var(--border)] rounded-2xl p-5">
+                    {/* Score Circle Indicator */}
+                    <div className="relative flex items-center justify-center shrink-0 w-28 h-28">
+                      <svg className="w-full h-full transform -rotate-90">
+                        {/* Track circle */}
+                        <circle
+                          cx="56"
+                          cy="56"
+                          r="48"
+                          className="stroke-[var(--border)]"
+                          strokeWidth="8"
+                          fill="transparent"
+                        />
+                        {/* Progress circle */}
+                        <circle
+                          cx="56"
+                          cy="56"
+                          r="48"
+                          stroke={atsResult.score >= 75 ? '#10B981' : atsResult.score >= 50 ? '#F59E0B' : '#EF4444'}
+                          strokeWidth="8"
+                          fill="transparent"
+                          strokeDasharray={2 * Math.PI * 48}
+                          strokeDashoffset={2 * Math.PI * 48 * (1 - atsResult.score / 100)}
+                          strokeLinecap="round"
+                          className="transition-all duration-1000 ease-out"
+                        />
+                      </svg>
+                      {/* Score Text Overlay */}
+                      <div className="absolute flex flex-col items-center justify-center">
+                        <span className="text-xl font-black theme-text-primary">{atsResult.score}%</span>
+                        <span className="text-[9px] uppercase font-bold theme-text-muted tracking-wider">Match</span>
+                      </div>
+                    </div>
+
+                    <div className="flex-1 space-y-4">
+                      {/* Summary rating */}
+                      <div>
+                        <h4 className="text-xs font-bold theme-text-primary">
+                          Match Rating: {' '}
+                          <span className={atsResult.score >= 75 ? 'text-emerald-400' : atsResult.score >= 50 ? 'text-amber-400' : 'text-rose-400'}>
+                            {atsResult.score >= 75 ? 'Strong Match' : atsResult.score >= 50 ? 'Moderate Match' : 'Weak Match'}
+                          </span>
+                        </h4>
+                        <p className="text-[11px] theme-text-secondary mt-1">
+                          Based on an automated comparison of your profile biography, headlines, experience dates, and schools against the target job requirements.
+                        </p>
+                      </div>
+
+                      {/* Skills lists */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="space-y-1.5">
+                          <h5 className="text-[10px] uppercase font-black tracking-widest text-emerald-400">Matched Skills</h5>
+                          {atsResult.matchedSkills && atsResult.matchedSkills.length > 0 ? (
+                            <div className="flex flex-wrap gap-1">
+                              {atsResult.matchedSkills.map((skill: string, idx: number) => (
+                                <span key={idx} className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
+                                  {skill}
+                                </span>
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="text-[10px] theme-text-muted italic">No clear matching skills found.</p>
+                          )}
+                        </div>
+
+                        <div className="space-y-1.5">
+                          <h5 className="text-[10px] uppercase font-black tracking-widest text-rose-400">Missing / Weak Skills</h5>
+                          {atsResult.missingSkills && atsResult.missingSkills.length > 0 ? (
+                            <div className="flex flex-wrap gap-1">
+                              {atsResult.missingSkills.map((skill: string, idx: number) => (
+                                <span key={idx} className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-rose-500/10 border border-rose-500/20 text-rose-400">
+                                  {skill}
+                                </span>
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="text-[10px] theme-text-muted italic">No major missing skills identified.</p>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Suggestions list */}
+                      {atsResult.suggestions && atsResult.suggestions.length > 0 && (
+                        <div className="space-y-1.5 pt-2 border-t theme-border">
+                          <h5 className="text-[10px] uppercase font-black tracking-widest theme-text-primary">Optimization Suggestions</h5>
+                          <ul className="list-disc pl-4 space-y-1">
+                            {atsResult.suggestions.map((suggestion: string, idx: number) => (
+                              <li key={idx} className="text-[11px] theme-text-secondary leading-relaxed">
+                                {suggestion}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* ── User Posts Card ── */}
+            <div className="theme-card rounded-2xl p-5 sm:p-6 shadow-xl space-y-4">
+              <div className="flex items-center justify-between pb-3 border-b theme-border">
+                <div className="flex items-center gap-2">
+                  <div className="p-2 rounded-lg bg-indigo-500/10 border border-indigo-500/20">
+                    <FileText className="w-4 h-4 text-indigo-400" />
+                  </div>
+                  <h2 className="text-sm font-bold theme-text-primary">
+                    {isOwnProfile ? 'My Posts' : `Posts by ${profileUser?.name}`}
+                  </h2>
+                </div>
+                <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-400">
+                  {userPosts.length} posts
+                </span>
+              </div>
+
+              {userPosts.length > 0 ? (
+                <div className="flex overflow-x-auto gap-4 pb-3 scrollbar-thin">
+                  {userPosts.map((post) => (
+                    <div
+                      key={post._id}
+                      onClick={() => handleMiniPostClick(post)}
+                      className="min-w-[280px] max-w-[300px] bg-[var(--btn-sec-bg)] border border-[var(--border)] rounded-2xl p-4 flex flex-col justify-between shrink-0 hover:border-indigo-500/30 transition-all cursor-pointer"
+                    >
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] theme-text-muted">
+                            {new Date(post.createdAt).toLocaleDateString(undefined, {
+                              month: 'short',
+                              day: 'numeric',
+                              year: 'numeric'
+                            })}
+                          </span>
+                        </div>
+                        <p className="text-xs theme-text-secondary leading-relaxed line-clamp-4 whitespace-pre-wrap">
+                          {post.body}
+                        </p>
+                        {post.media && (
+                          <div className="w-full h-24 rounded-lg overflow-hidden border theme-border bg-black/10">
+                            {post.fileType && ['mp4', 'webm', 'ogg', 'quicktime', 'mov', 'avi', 'mkv'].includes(post.fileType) ? (
+                              <div className="w-full h-full flex items-center justify-center bg-slate-950 text-indigo-400">
+                                <span className="text-[10px] font-bold">Video Clip</span>
+                              </div>
+                            ) : (
+                              <img
+                                src={post.media}
+                                alt="Post media"
+                                className="w-full h-full object-cover"
+                              />
+                            )}
+                          </div>
+                        )}
+                      </div>
+                      
+                      <div className="flex items-center gap-4 mt-4 pt-2 border-t theme-border text-[11px] theme-text-secondary">
+                        <span className="flex items-center gap-1">
+                          <ThumbsUp className="w-3.5 h-3.5 text-indigo-400" />
+                          {post.likes}
+                        </span>
+                        {post.commentCount !== undefined && (
+                          <span className="flex items-center gap-1">
+                            <MessageSquare className="w-3.5 h-3.5 text-indigo-400" />
+                            {post.commentCount}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-6 border border-dashed theme-border rounded-xl">
+                  <FileText className="w-8 h-8 theme-text-muted mx-auto mb-2" />
+                  <p className="text-xs theme-text-secondary">No posts published yet</p>
+                </div>
+              )}
             </div>
 
             {/* ── Work Experience Card ── */}
@@ -682,6 +1116,34 @@ export default function ProfilePage() {
           onSaved={fetchProfile}
         />
       )}
+
+      {/* Post Detail Modal */}
+      {selectedPostForModal && (
+        <PostDetailModal
+          post={selectedPostForModal}
+          liked={selectedPostLiked}
+          localLikes={selectedPostLikesCount}
+          commentCount={selectedPostCommentCount}
+          onClose={() => setSelectedPostForModal(null)}
+          onLike={handleModalLike}
+          onCommentCountChange={handleModalCommentCountChange}
+          getInitials={getInitials}
+          formatRelativeTime={formatRelativeTime}
+        />
+      )}
     </div>
+  );
+}
+
+export default function ProfilePage() {
+  return (
+    <Suspense fallback={
+      <div className="flex flex-col items-center justify-center py-24 gap-4 min-h-screen page-bg">
+        <Loader2 className="w-8 h-8 animate-spin text-indigo-400" />
+        <p className="text-sm theme-text-muted font-semibold">Loading profile...</p>
+      </div>
+    }>
+      <ProfileContent />
+    </Suspense>
   );
 }

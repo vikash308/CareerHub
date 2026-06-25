@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { ThumbsUp, MessageSquare, Share2, MoreHorizontal, Trash2 } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
@@ -120,7 +121,7 @@ export default function PostCard({ post, animationDelay = 0 }: PostCardProps) {
       style={{ animationDelay: `${animationDelay}ms` }}
     >
       <div className="flex gap-3 items-start mb-4">
-        <div className="shrink-0">
+        <Link href={`/profile?id=${post.userId._id}`} className="shrink-0 cursor-pointer hover:opacity-80 transition-opacity">
           {post.userId.profilePicture ? (
             <img
               src={post.userId.profilePicture}
@@ -132,12 +133,14 @@ export default function PostCard({ post, animationDelay = 0 }: PostCardProps) {
               {getInitials(post.userId.name)}
             </div>
           )}
-        </div>
+        </Link>
 
         <div className="flex-1 min-w-0">
-          <h3 className="text-sm font-bold theme-text-primary leading-tight truncate">
-            {post.userId.name}
-          </h3>
+          <Link href={`/profile?id=${post.userId._id}`} className="hover:underline block">
+            <h3 className="text-sm font-bold theme-text-primary leading-tight truncate">
+              {post.userId.name}
+            </h3>
+          </Link>
           <p className="text-[11px] theme-text-muted mt-0.5 truncate">
             @{post.userId.username}&nbsp;·&nbsp;{formatRelativeTime(post.createdAt)}
           </p>

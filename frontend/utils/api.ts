@@ -45,9 +45,12 @@ export const api = {
   },
 
   // --- Profile ---
-  getUserAndProfile: async () => {
+  getUserAndProfile: async (userId?: string) => {
     const token = getToken();
-    const res = await fetch(`${API_BASE_URL}/get_user_and_profile?token=${token}`, {
+    const url = userId 
+      ? `${API_BASE_URL}/get_user_and_profile?userId=${userId}`
+      : `${API_BASE_URL}/get_user_and_profile?token=${token}`;
+    const res = await fetch(url, {
       method: 'GET',
       headers: getHeaders(),
     });
@@ -93,6 +96,24 @@ export const api = {
   downloadResume: async (userId: string) => {
     const res = await fetch(`${API_BASE_URL}/user/download_resume?id=${userId}`, {
       method: 'GET',
+    });
+    if (!res.ok) throw new Error('Download failed');
+    const blob = await res.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `resume_${userId}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.URL.revokeObjectURL(url);
+  },
+
+  atsAnalyze: async (jobDescription: string) => {
+    const res = await fetch(`${API_BASE_URL}/user/ats_analyze`, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify({ jobDescription, token: getToken() }),
     });
     return res.json();
   },
