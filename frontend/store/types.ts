@@ -29,6 +29,8 @@ export interface Profile {
   currentPost: string;
   pastWork: WorkExperience[];
   education: Education[];
+  resumeUrl?: string;
+  resumeName?: string;
 }
 
 export interface Post {

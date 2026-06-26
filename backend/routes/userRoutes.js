@@ -1,10 +1,16 @@
 import { Router } from "express";
-import { acceptConnectionRequest, atsAnalyze, changePassword, deleteUserAccount, downloadProfile, getAllUserProfile, getMyConnectionRequests, getUserAndProfile, login, register, sendConnectionRequest, updateProfileData, updateUserProfile, uploadProfilePicture, whatAreMyConnection } from "../controllers/userController.js";
-import { uploadToCloudinary } from "../config/cloudinary.js";
+import { acceptConnectionRequest, atsAnalyze, changePassword, deleteUserAccount, downloadProfile, getAllUserProfile, getMyConnectionRequests, getUserAndProfile, login, register, sendConnectionRequest, updateProfileData, updateUserProfile, uploadProfilePicture, whatAreMyConnection, uploadResumeFile, deleteResumeFile } from "../controllers/userController.js";
+import { uploadToCloudinary, uploadResume } from "../config/cloudinary.js";
+import { getUserNotifications, markNotificationsAsRead } from "../controllers/notificationController.js";
 
 const router = Router();
 
 router.route("/update_profile_picture").post(uploadToCloudinary.single('profile_picture'), uploadProfilePicture)
+router.route("/user/upload_resume").post(uploadResume.single('resume'), uploadResumeFile)
+router.route("/user/delete_resume").post(deleteResumeFile)
+
+router.route("/user/notifications").get(getUserNotifications);
+router.route("/user/notifications/read").post(markNotificationsAsRead);
 
 router.route('/register').post(register);
 router.route('/login').post(login)

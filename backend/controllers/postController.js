@@ -2,6 +2,7 @@ import User from "../models/userModel.js";
 import Post from '../models/postModel.js';
 import Comment from '../models/commentModel.js';
 import cloudinary from '../config/cloudinary.js';
+import { createNotification } from "./notificationController.js";
 
 
 export const createPost = async (req, res) => {
@@ -101,7 +102,7 @@ export const commentPost = async(req,res) =>{
     const {token, post_id, commentBody} = req.body;
 
     try {
-        const user = await User.findOne({ token }).select("_id")
+        const user = await User.findOne({ token }).select("_id name")
         if (!user) {
             return res.status(404).json({ message: "user not found" })
         }
@@ -118,6 +119,18 @@ export const commentPost = async(req,res) =>{
         })
 
         await comment.save();
+
+        if (post.userId.toString() !== user._id.toString()) {
+            await createNotification(
+                post.userId,
+                user._id,
+                'comment',
+                'New Comment',
+                `${user.name} commented on your post: "${commentBody.slice(0, 30)}${commentBody.length > 30 ? '...' : ''}"`,
+                '/'
+            );
+        }
+
         return res.json({message:" comment Added"})
     } catch (error) {
         return res.status(500).json({message:error.message})
@@ -165,6 +178,7 @@ export const deleteComemntOfUser = async (req,res) =>{
 
 export const increment_likes = async(req, res) =>{
     const {post_id} = req.body;
+    const token = req.body.token || req.headers['x-auth-token'] || req.query.token;
 
     try {
         const post = await Post.findOne({_id: post_id});
@@ -173,8 +187,22 @@ export const increment_likes = async(req, res) =>{
         }
 
         post.likes = post.likes +1;
-        
         await post.save();
+
+        if (token) {
+            const user = await User.findOne({ token }).select("_id name");
+            if (user && post.userId.toString() !== user._id.toString()) {
+                await createNotification(
+                    post.userId,
+                    user._id,
+                    'like',
+                    'Post Liked',
+                    `${user.name} liked your post.`,
+                    '/'
+                );
+            }
+        }
+
         return res.json({message: "Likes incremented"})
     } catch (error) {
         return res.status(500).json({message: error.message});

@@ -6,6 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useTheme } from 'next-themes';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { logout } from '../store/authSlice';
+import { api } from '../utils/api';
 import {
   Briefcase,
   Search,
@@ -52,6 +53,26 @@ export default function Navbar() {
   const [mounted,        setMounted]        = useState(false);
   const [searchFocused,  setSearchFocused]  = useState(false);
   const [searchVal,      setSearchVal]      = useState('');
+  const [unreadNotifications, setUnreadNotifications] = useState(0);
+
+  const fetchUnreadCount = async () => {
+    try {
+      const res = await api.getNotifications();
+      if (res && typeof res.unreadCount === 'number') {
+        setUnreadNotifications(res.unreadCount);
+      }
+    } catch (err) {
+      console.error("Failed to fetch notifications unread count:", err);
+    }
+  };
+
+  useEffect(() => {
+    if (user) {
+      fetchUnreadCount();
+      const interval = setInterval(fetchUnreadCount, 20000); // refresh every 20s
+      return () => clearInterval(interval);
+    }
+  }, [user]);
 
   const handleSearchSubmit = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && searchVal.trim()) {
@@ -212,17 +233,22 @@ export default function Navbar() {
 
               <button
                 id="nav-notifications-btn"
+                onClick={() => router.push('/notifications')}
                 aria-label="Notifications"
                 className="nav-icon-btn relative p-2.5 rounded-xl transition-all duration-200 theme-btn-secondary"
               >
                 <Bell className="w-4.5 h-4.5" />
-                <span
-                  className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full border-2"
-                  style={{
-                    background: '#818cf8',
-                    borderColor: 'var(--background)',
-                  }}
-                />
+                {unreadNotifications > 0 && (
+                  <span
+                    className="absolute -top-1 -right-1 min-w-[16px] h-4 rounded-full text-[9px] font-black flex items-center justify-center px-1 text-white border animate-pulse"
+                    style={{
+                      background: '#ef4444',
+                      borderColor: 'var(--background)',
+                    }}
+                  >
+                    {unreadNotifications}
+                  </span>
+                )}
               </button>
 
               <button
@@ -478,6 +504,32 @@ export default function Navbar() {
                 </Link>
               );
             })}
+
+            <Link
+              href="/notifications"
+              id="mobile-nav-link-notifications"
+              onClick={() => setMobileMenuOpen(false)}
+              className="flex items-center justify-between px-4 py-3 rounded-xl text-sm font-medium transition-all duration-150 border"
+              style={{
+                color: pathname.startsWith('/notifications') ? 'var(--active-link-text)' : 'var(--text-secondary)',
+                background: pathname.startsWith('/notifications')
+                  ? 'var(--active-link-bg)'
+                  : 'transparent',
+                borderColor: pathname.startsWith('/notifications')
+                  ? 'var(--active-link-border)'
+                  : 'transparent',
+              }}
+            >
+              <div className="flex items-center gap-3">
+                <Bell className="w-4 h-4 shrink-0" />
+                <span>Notifications</span>
+              </div>
+              {unreadNotifications > 0 && (
+                <span className="min-w-[16px] h-4 rounded-full text-[9px] font-black flex items-center justify-center px-1 text-white bg-red-500">
+                  {unreadNotifications}
+                </span>
+              )}
+            </Link>
 
             <div
               className="mt-2 pt-3 flex items-center justify-between border-t"

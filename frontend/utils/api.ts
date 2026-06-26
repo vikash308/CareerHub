@@ -86,6 +86,24 @@ export const api = {
     return res.json();
   },
 
+  uploadResume: async (formData: FormData) => {
+    formData.append('token', getToken());
+    const res = await fetch(`${API_BASE_URL}/user/upload_resume`, {
+      method: 'POST',
+      body: formData,
+    });
+    return res.json();
+  },
+
+  deleteResume: async () => {
+    const res = await fetch(`${API_BASE_URL}/user/delete_resume`, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify({ token: getToken() }),
+    });
+    return res.json();
+  },
+
   getAllUserProfiles: async () => {
     const res = await fetch(`${API_BASE_URL}/user/get_all_user_profile`, {
       method: 'GET',
@@ -235,11 +253,38 @@ export const api = {
     return res.json();
   },
 
-  applyToJob: async (jobId: string) => {
+  applyToJob: async (jobId: string, appliedWithResume?: string, resumeName?: string) => {
     const res = await fetch(`${API_BASE_URL}/jobs/apply`, {
       method: 'POST',
       headers: getHeaders(),
-      body: JSON.stringify({ jobId, token: getToken() }),
+      body: JSON.stringify({ jobId, token: getToken(), appliedWithResume, resumeName }),
+    });
+    return res.json();
+  },
+
+  getUserApplications: async () => {
+    const token = getToken();
+    const res = await fetch(`${API_BASE_URL}/jobs/applications?token=${token}`, {
+      method: 'GET',
+      headers: getHeaders(),
+    });
+    return res.json();
+  },
+
+  getPostedJobs: async () => {
+    const token = getToken();
+    const res = await fetch(`${API_BASE_URL}/jobs/posted?token=${token}`, {
+      method: 'GET',
+      headers: getHeaders(),
+    });
+    return res.json();
+  },
+
+  updateApplicationStatus: async (applicationId: string, status: string) => {
+    const res = await fetch(`${API_BASE_URL}/jobs/applications/status`, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify({ applicationId, status, token: getToken() }),
     });
     return res.json();
   },
@@ -259,6 +304,25 @@ export const api = {
       method: 'POST',
       headers: getHeaders(),
       body: JSON.stringify({ token: getToken() }),
+    });
+    return res.json();
+  },
+
+  // --- Notifications ---
+  getNotifications: async () => {
+    const token = getToken();
+    const res = await fetch(`${API_BASE_URL}/user/notifications?token=${token}`, {
+      method: 'GET',
+      headers: getHeaders(),
+    });
+    return res.json();
+  },
+
+  markNotificationsRead: async (notificationId?: string) => {
+    const res = await fetch(`${API_BASE_URL}/user/notifications/read`, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify({ token: getToken(), notificationId }),
     });
     return res.json();
   },

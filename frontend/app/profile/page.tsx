@@ -399,6 +399,9 @@ export function ProfileContent() {
   const [profileData, setProfileData] = useState<Profile | null>(null);
   const [userPosts, setUserPosts] = useState<any[]>([]);
 
+  const [uploadingResume, setUploadingResume] = useState(false);
+  const resumeInputRef = useRef<HTMLInputElement>(null);
+
   const [selectedPostForModal, setSelectedPostForModal] = useState<Post | null>(null);
   const [selectedPostLiked, setSelectedPostLiked] = useState(false);
   const [selectedPostLikesCount, setSelectedPostLikesCount] = useState(0);
@@ -416,6 +419,11 @@ export function ProfileContent() {
 
   const handleDownloadResume = async () => {
     if (!profileUser?._id) return;
+    if (profile?.resumeUrl) {
+      window.open(profile.resumeUrl, '_blank');
+      toast.success('Opening custom resume PDF!');
+      return;
+    }
     setIsDownloading(true);
     try {
       await api.downloadResume(profileUser._id);
@@ -453,6 +461,55 @@ export function ProfileContent() {
   };
 
   const avatarInputRef = useRef<HTMLInputElement>(null);
+
+  const handleResumeUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.type !== 'application/pdf') {
+      toast.error('Only PDF documents are supported for resumes.');
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error('Resume must be under 10 MB.');
+      return;
+    }
+
+    setUploadingResume(true);
+    try {
+      const formData = new FormData();
+      formData.append('resume', file);
+      formData.append('name', file.name);
+
+      const res = await api.uploadResume(formData);
+      if (res?.resumeUrl) {
+        toast.success('Custom resume uploaded successfully!');
+        fetchProfile(); // Re-fetch to sync
+      } else {
+        toast.error(res?.message || 'Failed to upload resume.');
+      }
+    } catch {
+      toast.error('Network error during upload.');
+    } finally {
+      setUploadingResume(false);
+      if (resumeInputRef.current) resumeInputRef.current.value = '';
+    }
+  };
+
+  const handleDeleteResume = async () => {
+    if (!confirm('Are you sure you want to delete your custom resume?')) return;
+    try {
+      const res = await api.deleteResume();
+      if (res?.message?.includes('deleted') || res?.message?.includes('success')) {
+        toast.success('Custom resume deleted.');
+        fetchProfile();
+      } else {
+        toast.error(res?.message || 'Failed to delete resume.');
+      }
+    } catch {
+      toast.error('Network error deleting resume.');
+    }
+  };
 
   const handleMiniPostClick = (post: any) => {
     setSelectedPostForModal(post);
@@ -561,8 +618,12 @@ export function ProfileContent() {
 
       if (res?.profilePicture) {
         dispatch(updateUser({ ...user, profilePicture: res.profilePicture }));
-        // Also update myProfile in redux
-        dispatch(updateMyProfileData({ userId: { ...myProfile?.userId, profilePicture: res.profilePicture } }));
+        const updatedUserId = myProfile?.userId
+          ? { ...myProfile.userId, profilePicture: res.profilePicture }
+          : undefined;
+        if (updatedUserId) {
+          dispatch(updateMyProfileData({ userId: updatedUserId }));
+        }
         toast.success('Profile picture updated!');
         fetchProfile(); // re-fetch to sync
       } else {
@@ -761,15 +822,90 @@ export function ProfileContent() {
                   </button>
                 </div>
 
+                {/* Custom Resume Upload Section */}
+                {isOwnProfile && (
+                  <div className="md:col-span-1 space-y-3 bg-[var(--btn-sec-bg)] border border-[var(--border)] rounded-2xl p-4 flex flex-col justify-between">
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <FileText className="w-4 h-4 text-indigo-400" />
+                        <h3 className="text-xs font-bold theme-text-primary uppercase tracking-wider">Custom Resume</h3>
+                      </div>
+                      
+                      {profile.resumeUrl ? (
+                        <div className="space-y-1 bg-black/10 p-2.5 rounded-xl border theme-border">
+                          <p className="text-[11px] font-bold theme-text-primary truncate">
+                            {profile.resumeName}
+                          </p>
+                          <p className="text-[9px] theme-text-muted">
+                            Custom PDF Resume uploaded
+                          </p>
+                        </div>
+                      ) : (
+                        <p className="text-[11px] theme-text-secondary leading-relaxed">
+                          Upload your own custom PDF resume to apply to jobs directly.
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="mt-4 flex flex-col gap-2">
+                      {profile.resumeUrl ? (
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => window.open(profile.resumeUrl, '_blank')}
+                            className="flex-1 flex items-center justify-center gap-1 px-3 py-2 rounded-xl text-[10px] font-semibold bg-[var(--dropdown-bg)] border theme-border theme-text-primary hover:bg-[var(--btn-sec-bg)] transition-all cursor-pointer"
+                          >
+                            <Download className="w-3 h-3" />
+                            View
+                          </button>
+                          <button
+                            onClick={handleDeleteResume}
+                            className="flex-1 flex items-center justify-center gap-1 px-3 py-2 rounded-xl text-[10px] font-semibold bg-rose-500/10 border border-rose-500/20 text-rose-400 hover:bg-rose-500/20 transition-all cursor-pointer"
+                          >
+                            <X className="w-3 h-3" />
+                            Delete
+                          </button>
+                        </div>
+                      ) : null}
+
+                      <div className="relative w-full">
+                        <button
+                          onClick={() => resumeInputRef.current?.click()}
+                          disabled={uploadingResume}
+                          className="w-full flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white transition-all disabled:opacity-50 cursor-pointer shadow-md shadow-indigo-600/10"
+                        >
+                          {uploadingResume ? (
+                            <>
+                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                              Uploading...
+                            </>
+                          ) : (
+                            <>
+                              <Plus className="w-3.5 h-3.5" />
+                              {profile.resumeUrl ? 'Replace Resume' : 'Upload Resume'}
+                            </>
+                          )}
+                        </button>
+                        <input
+                          ref={resumeInputRef}
+                          type="file"
+                          accept=".pdf"
+                          className="hidden"
+                          onChange={handleResumeUpload}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 {/* ATS Scan Section */}
                 {isOwnProfile && (
-                  <div className="md:col-span-2 space-y-3">
+                  <div className="md:col-span-1 space-y-3">
                     <div className="space-y-1">
                       <h3 className="text-xs font-bold theme-text-primary uppercase tracking-wider flex items-center gap-1.5">
-                        ATS Job Description Scanner
+                        ATS Job Scanner
                       </h3>
                       <p className="text-[11px] theme-text-secondary leading-relaxed">
-                        Paste a target job description below to verify how well your profile aligns with the role and get optimization tips.
+                        Verify profile match against job requirements and get recommendations.
                       </p>
                     </div>
 
@@ -779,7 +915,7 @@ export function ProfileContent() {
                         onChange={(e) => setJobDescription(e.target.value)}
                         rows={4}
                         className="w-full theme-input rounded-xl px-3 py-2 text-xs placeholder-[var(--text-muted)] focus:outline-none transition-all resize-none font-mono"
-                        placeholder="Paste target job description requirements here..."
+                        placeholder="Paste requirements..."
                       />
 
                       <button
@@ -790,12 +926,12 @@ export function ProfileContent() {
                         {isAnalyzing ? (
                           <>
                             <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                            Analyzing Profile...
+                            Scanning...
                           </>
                         ) : (
                           <>
                             <Sparkles className="w-3.5 h-3.5" />
-                            Scan Profile Match
+                            Scan Profile
                           </>
                         )}
                       </button>

@@ -53,6 +53,14 @@ const profileSchema = new mongoose.Schema({
     education:{
         type:[educationSchema],
         default:[]
+    },
+    resumeUrl: {
+        type: String,
+        default: ''
+    },
+    resumeName: {
+        type: String,
+        default: ''
     }
 })
 

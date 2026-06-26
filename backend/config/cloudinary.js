@@ -39,4 +39,15 @@ const postMediaStorage = new CloudinaryStorage({
 export const uploadToCloudinary = multer({ storage: profilePictureStorage });
 export const uploadPostMedia = multer({ storage: postMediaStorage });
 
+// Storage for raw PDF resumes
+const resumeStorage = new CloudinaryStorage({
+    cloudinary,
+    params: {
+        folder: 'careerhub/resumes',
+        resource_type: 'raw',
+        allowed_formats: ['pdf']
+    },
+});
+export const uploadResume = multer({ storage: resumeStorage });
+
 export default cloudinary;

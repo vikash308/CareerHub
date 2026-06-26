@@ -7,6 +7,7 @@ import PDFDocument from 'pdfkit'
 import fs from 'fs';
 import ConnectionRequest from '../models/connectionModel.js'
 import Job from '../models/jobModel.js'
+import { createNotification } from './notificationController.js';
 
 
 const convertUserDataToPDF = async (userData, res) => {
@@ -475,6 +476,17 @@ export const sendConnectionRequest = async (req, res) => {
         })
 
         await request.save();
+
+        // Notify recipient
+        await createNotification(
+            connectionUser._id,
+            user._id,
+            'connection_request',
+            'Connection Request',
+            `${user.name} sent you a connection request.`,
+            '/directory'
+        );
+
         return res.json({ message: "request sent" })
     } catch (error) {
         return res.status(500).json({ message: error.message })
@@ -533,11 +545,21 @@ export const acceptConnectionRequest = async (req, res) => {
 
         if (action_type === "accept") {
             connection.status_accepted = true;
+            await connection.save();
+
+            // Notify original sender
+            await createNotification(
+                connection.userId,
+                user._id,
+                'connection_accept',
+                'Connection Accepted',
+                `${user.name} accepted your connection request.`,
+                '/directory'
+            );
         } else {
             connection.status_accepted = false;
+            await connection.save();
         }
-
-        await connection.save();
         return res.json({ message: "request updated" })
     } catch (error) {
         return res.status(500).json({ message: error.message })
@@ -701,5 +723,54 @@ Please respond strictly with a valid JSON object matching this schema (do not in
     } catch (error) {
         console.error("ATS analysis error:", error);
         return res.status(500).json({ message: "ATS analysis failed: " + error.message });
+    }
+};
+
+export const uploadResumeFile = async (req, res) => {
+    try {
+        const { token, name } = req.body;
+        if (!req.file) return res.status(400).json({ message: "No file uploaded" });
+
+        const user = await User.findOne({ token });
+        if (!user) return res.status(404).json({ message: "User not found" });
+
+        let profile = await Profile.findOne({ userId: user._id });
+        if (!profile) {
+            profile = new Profile({ userId: user._id });
+        }
+
+        profile.resumeUrl = req.file.path; // Cloudinary secure raw URL
+        profile.resumeName = name || req.file.originalname || "Uploaded Resume";
+
+        await profile.save();
+
+        return res.json({ 
+            message: "Resume uploaded successfully", 
+            resumeUrl: profile.resumeUrl,
+            resumeName: profile.resumeName
+        });
+    } catch (error) {
+        console.error("Upload resume error:", error);
+        return res.status(500).json({ message: "Upload failed: " + error.message });
+    }
+};
+
+export const deleteResumeFile = async (req, res) => {
+    try {
+        const { token } = req.body;
+        const user = await User.findOne({ token });
+        if (!user) return res.status(404).json({ message: "User not found" });
+
+        const profile = await Profile.findOne({ userId: user._id });
+        if (!profile) return res.status(404).json({ message: "Profile not found" });
+
+        profile.resumeUrl = "";
+        profile.resumeName = "";
+        await profile.save();
+
+        return res.json({ message: "Resume deleted successfully" });
+    } catch (error) {
+        console.error("Delete resume error:", error);
+        return res.status(500).json({ message: "Delete failed: " + error.message });
     }
 };
