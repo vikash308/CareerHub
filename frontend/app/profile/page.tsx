@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useRef, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { setMyProfile, updateMyProfileData } from '../../store/profileSlice';
 import { updateUser } from '../../store/authSlice';
@@ -387,6 +387,7 @@ function EditProfileModal({ profile, onClose, onSaved }: EditProfileModalProps) 
 export function ProfileContent() {
   const dispatch = useAppDispatch();
   const searchParams = useSearchParams();
+  const router = useRouter();
   const userIdQuery = searchParams.get('id');
   const { user } = useAppSelector((s) => s.auth);
   const { myProfile } = useAppSelector((s) => s.profile);
@@ -447,6 +448,17 @@ export function ProfileContent() {
       const result = await api.atsAnalyze(jobDescription);
       if (result && typeof result.score === 'number') {
         setAtsResult(result);
+        if (typeof window !== 'undefined') {
+          sessionStorage.setItem(
+            'ats_improvement_payload',
+            JSON.stringify({
+              result,
+              jobDescription,
+              profileName: profileUser?.name || user?.name || 'Your Resume',
+              resumeName: profile?.resumeName || 'Uploaded Resume',
+            })
+          );
+        }
         toast.success('ATS analysis completed!');
       } else {
         setAtsError(result.message || 'Failed to analyze profile.');
@@ -936,6 +948,16 @@ export function ProfileContent() {
                         )}
                       </button>
                     </div>
+
+                    {atsResult && (
+                      <button
+                        onClick={() => router.push('/profile/ats-improvement')}
+                        className="w-full flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold bg-[var(--btn-sec-bg)] border theme-border theme-text-primary hover:bg-[var(--btn-sec-hover)] transition-all cursor-pointer"
+                      >
+                        <Sparkles className="w-3.5 h-3.5" />
+                        View Improvements
+                      </button>
+                    )}
                   </div>
                 )}
               </div>

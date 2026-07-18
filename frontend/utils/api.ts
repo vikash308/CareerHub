@@ -136,6 +136,15 @@ export const api = {
     return res.json();
   },
 
+  resumeAtsAnalyze: async (formData: FormData) => {
+    formData.append('token', getToken());
+    const res = await fetch(`${API_BASE_URL}/user/resume_ats_analyze`, {
+      method: 'POST',
+      body: formData,
+    });
+    return res.json();
+  },
+
   // --- Connections ---
   sendConnectionRequest: async (connectionId: string) => {
     const res = await fetch(`${API_BASE_URL}/user/send_connection_request`, {

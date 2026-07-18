@@ -5,6 +5,7 @@ import Profile from '../models/profileModel.js'
 import crypto from 'crypto'
 import PDFDocument from 'pdfkit'
 import fs from 'fs';
+import pdfParse from 'pdf-parse';
 import ConnectionRequest from '../models/connectionModel.js'
 import Job from '../models/jobModel.js'
 import { createNotification } from './notificationController.js';
@@ -643,24 +644,25 @@ export const atsAnalyze = async (req, res) => {
             return res.status(404).json({ message: "Profile not found" });
         }
 
-        const apiKey = process.env.GEMINI_API_KEY;
+        const apiKey = process.env.GROQ_API_KEY;
 
         // If API key is missing, return error with a clean message (do not return fake simulated data)
         if (!apiKey) {
-            console.log("GEMINI_API_KEY is not configured. Refusing to analyze.");
+            console.log("GROQ_API_KEY is not configured. Refusing to analyze.");
             return res.status(400).json({
-                error: "GEMINI_KEY_MISSING",
-                message: "Google Gemini API Key is not configured in the backend environment. Please configure it to enable the ATS analysis feature."
+                error: "GROQ_KEY_MISSING",
+                message: "Groq API Key is not configured in the backend environment. Please configure it to enable the ATS analysis feature."
             });
         }
 
-        // Prepare prompt for Gemini API
+        // Prepare prompt for Groq API
         const profileDetails = {
             name: user.name,
             bio: profile.bio || "No biography provided",
             headline: profile.currentPost || "No professional headline",
             pastWork: profile.pastWork || [],
-            education: profile.education || []
+            education: profile.education || [],
+            resumeName: profile.resumeName || "No resume uploaded"
         };
 
         const promptText = `
@@ -678,39 +680,40 @@ Please respond strictly with a valid JSON object matching this schema (do not in
   "score": 75, // A number between 0 and 100 representing how well the profile matches the job description
   "matchedSkills": ["SkillA", "SkillB"], // Key skills found in the profile that match the job description
   "missingSkills": ["SkillC", "SkillD"], // Key skills/requirements from the job description missing or weak in the profile
-  "suggestions": ["Suggestion 1", "Suggestion 2"] // Specific, actionable tips to improve the profile for this role
+  "suggestions": ["Suggestion 1", "Suggestion 2"], // Specific, actionable tips to improve the profile for this role
+  "summary": "Short ATS summary explaining the score in one or two sentences"
 }
 `;
 
-        const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+        const groqUrl = "https://api.groq.com/openai/v1/chat/completions";
         
-        const response = await fetch(geminiUrl, {
+        const response = await fetch(groqUrl, {
             method: "POST",
             headers: {
-                "Content-Type": "application/json"
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${apiKey}`
             },
             body: JSON.stringify({
-                contents: [{
-                    parts: [{
-                        text: promptText
-                    }]
-                }],
-                generationConfig: {
-                    responseMimeType: "application/json"
-                }
+                model: "openai/gpt-oss-120b",
+                messages: [
+                    { role: "system", content: "You are a precise ATS resume analyzer. Return only valid JSON." },
+                    { role: "user", content: promptText }
+                ],
+                temperature: 0.2,
+                response_format: { type: "json_object" }
             })
         });
 
         if (!response.ok) {
             const errText = await response.text();
-            throw new Error(`Gemini API Error: ${response.status} - ${errText}`);
+            throw new Error(`Groq API Error: ${response.status} - ${errText}`);
         }
 
         const data = await response.json();
-        const responseText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+        const responseText = data.choices?.[0]?.message?.content;
         
         if (!responseText) {
-            throw new Error("Empty response from Gemini API");
+            throw new Error("Empty response from Groq API");
         }
 
         // Parse the JSON response
@@ -772,5 +775,113 @@ export const deleteResumeFile = async (req, res) => {
     } catch (error) {
         console.error("Delete resume error:", error);
         return res.status(500).json({ message: "Delete failed: " + error.message });
+    }
+};
+
+export const resumeAtsAnalyze = async (req, res) => {
+    try {
+        const { token } = req.body;
+        if (!req.file && !req.body.resumeUrl) {
+            return res.status(400).json({ message: "Resume file is required" });
+        }
+
+        const user = await User.findOne({ token });
+        if (!user) return res.status(404).json({ message: "User not found" });
+
+        const profile = await Profile.findOne({ userId: user._id });
+        if (!profile) return res.status(404).json({ message: "Profile not found" });
+
+        const apiKey = process.env.GROQ_API_KEY;
+        if (!apiKey) {
+            return res.status(400).json({
+                error: "GROQ_KEY_MISSING",
+                message: "Groq API Key is not configured in the backend environment. Please configure it to enable the ATS analysis feature."
+            });
+        }
+
+        const resumeName = req.body.resumeName || req.file?.originalname || profile.resumeName || "Uploaded Resume";
+        const resumeUrl = req.body.resumeUrl || req.file?.path || profile.resumeUrl || "";
+        let resumeText = req.body.resumeText || "";
+
+        if (!resumeText && resumeUrl) {
+            try {
+                const resumeResponse = await fetch(resumeUrl);
+                if (resumeResponse.ok) {
+                    const resumeBuffer = Buffer.from(await resumeResponse.arrayBuffer());
+                    const parsedResume = await pdfParse(resumeBuffer);
+                    resumeText = parsedResume.text || "";
+                }
+            } catch (parseError) {
+                console.error("Resume fetch/parse error:", parseError);
+            }
+        }
+
+        const promptText = `
+You are an ATS resume reviewer.
+First, infer the most likely job profile or target role for this resume.
+Then infer whether the resume is for a fresher/entry-level candidate or an experienced candidate.
+Use only role-relevant requirements for that level.
+If the resume is clearly fresher-level, do not invent senior requirements like technical architecture ownership, metrics-driven decision making, or user research unless the resume text actually supports them.
+Score this resume from 0 to 100 based on ATS friendliness, clarity, formatting, keyword usage, role fit, and level fit.
+Return only valid JSON.
+
+Resume details:
+${JSON.stringify({
+    candidateName: user.name,
+    headline: profile.currentPost || "",
+    bio: profile.bio || "",
+    resumeName,
+    resumeUrl,
+    resumeText
+}, null, 2)}
+
+Return this JSON schema:
+{
+  "score": 78,
+  "jobProfile": "Frontend Developer",
+  "candidateLevel": "fresher",
+  "levelReasoning": "The resume shows only academic projects and internships, so it is fresher-level.",
+  "requirements": ["Requirement 1", "Requirement 2", "Requirement 3"],
+  "coveredRequirements": ["Requirement 1"],
+  "matchedSkills": ["..."],
+  "missingSkills": ["..."],
+  "suggestions": ["..."],
+  "summary": "..."
+}
+`;
+
+        const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${apiKey}`
+            },
+            body: JSON.stringify({
+                model: "openai/gpt-oss-120b",
+                messages: [
+                    { role: "system", content: "You are a precise ATS resume analyzer. Only use skills and requirements that match the inferred job role and candidate level. Return only valid JSON." },
+                    { role: "user", content: promptText }
+                ],
+                temperature: 0.05,
+                response_format: { type: "json_object" }
+            })
+        });
+
+        if (!response.ok) {
+            const errText = await response.text();
+            throw new Error(`Groq API Error: ${response.status} - ${errText}`);
+        }
+
+        const data = await response.json();
+        const responseText = data.choices?.[0]?.message?.content;
+        if (!responseText) {
+            throw new Error("Empty response from Groq API");
+        }
+
+        const analysisResult = JSON.parse(responseText.trim());
+        return res.json({ isMock: false, resumeName, resumeUrl, ...analysisResult });
+    } catch (error) {
+        console.error("Resume ATS analysis error:", error);
+        return res.status(500).json({ message: "ATS analysis failed: " + error.message });
     }
 };

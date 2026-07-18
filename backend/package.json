@@ -23,6 +23,7 @@
     "multer-storage-cloudinary": "^4.0.0",
     "openai": "^6.25.0",
     "pdf-creator-node": "^2.3.5",
+    "pdf-parse": "^2.4.5",
     "pdfkit": "^0.17.2"
   }
 }

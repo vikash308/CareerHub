@@ -2,10 +2,11 @@
 
 import { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { setPosts } from '../store/postSlice';
 import { api } from '../utils/api';
-import { Sparkles, UserPlus, RefreshCw } from 'lucide-react';
+import { Sparkles, UserPlus, RefreshCw, Upload, Loader2, FileText } from 'lucide-react';
 import { toast } from 'react-toastify';
 
 import PostCard from '../components/PostCard';
@@ -15,6 +16,7 @@ import CreatePostWidget from '../components/CreatePostWidget';
 const SKELETON_COUNT = 3;
 
 export default function FeedPage() {
+  const router = useRouter();
   const dispatch = useAppDispatch();
   const { user } = useAppSelector((state) => state.auth);
   const posts = useAppSelector((state) => state.posts.posts);
@@ -24,7 +26,11 @@ export default function FeedPage() {
   const [recommendations, setRecommendations] = useState<any[]>([]);
   const [loadingSuggestions, setLoadingSuggestions] = useState(false);
   const [showStickyWidget, setShowStickyWidget] = useState(false);
+  const [resumeFile, setResumeFile] = useState<File | null>(null);
+  const [analyzingResume, setAnalyzingResume] = useState(false);
+  const [connectionCount, setConnectionCount] = useState<number | null>(null);
   const lastScrollYRef = useRef(0);
+  const resumeInputRef = useRef<HTMLInputElement>(null);
 
   const fetchPosts = async () => {
     setIsLoading(true);
@@ -64,6 +70,26 @@ export default function FeedPage() {
     }
   };
 
+  const fetchConnectionCount = async () => {
+    try {
+      const [sentRes, incomingRes] = await Promise.all([
+        api.getSentRequests(),
+        api.getIncomingRequests(),
+      ]);
+
+      const sentAccepted = Array.isArray(sentRes?.connections)
+        ? sentRes.connections.filter((req: any) => req.status_accepted === true).length
+        : 0;
+      const incomingAccepted = Array.isArray(incomingRes)
+        ? incomingRes.filter((req: any) => req.status_accepted === true).length
+        : 0;
+
+      setConnectionCount(sentAccepted + incomingAccepted);
+    } catch {
+      setConnectionCount(null);
+    }
+  };
+
   const handleConnect = async (targetUserId: string, targetName: string) => {
     try {
       const res = await api.sendConnectionRequest(targetUserId);
@@ -78,10 +104,50 @@ export default function FeedPage() {
     }
   };
 
+  const handleResumeAnalyze = async () => {
+    if (!resumeFile) {
+      toast.warning('Please upload a resume PDF first.');
+      return;
+    }
+    if (resumeFile.type !== 'application/pdf') {
+      toast.error('Only PDF resumes are supported.');
+      return;
+    }
+
+    setAnalyzingResume(true);
+    try {
+      const formData = new FormData();
+      formData.append('resume', resumeFile);
+      formData.append('resumeName', resumeFile.name);
+
+      const result = await api.resumeAtsAnalyze(formData);
+      if (result && typeof result.score === 'number') {
+        sessionStorage.setItem(
+          'ats_improvement_payload',
+          JSON.stringify({
+            result,
+            resumeName: result.resumeName || resumeFile.name,
+            profileName: user?.name || 'Your Resume',
+            resumeUrl: result.resumeUrl || '',
+          })
+        );
+        toast.success('ATS analysis completed!');
+        router.push('/profile/ats-improvement');
+      } else {
+        toast.error(result?.message || 'Failed to analyze resume.');
+      }
+    } catch {
+      toast.error('Network error during resume analysis.');
+    } finally {
+      setAnalyzingResume(false);
+    }
+  };
+
   useEffect(() => {
     fetchPosts();
     if (user) {
       fetchSuggestions();
+      fetchConnectionCount();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
@@ -153,7 +219,9 @@ export default function FeedPage() {
                   </div>
                   <div className="flex justify-between items-center px-1">
                     <span className="text-xs theme-text-secondary">Connections</span>
-                    <span className="text-xs text-indigo-600 dark:text-indigo-300 font-bold">—</span>
+                    <span className="text-xs text-indigo-600 dark:text-indigo-300 font-bold">
+                      {connectionCount === null ? '0' : connectionCount}
+                    </span>
                   </div>
                 </div>
 
@@ -242,34 +310,66 @@ export default function FeedPage() {
               </div>
 
               <div className="flex flex-col items-center justify-center py-4 relative z-10">
-                <div className="relative w-24 h-24 flex items-center justify-center rounded-full border-4 border-[var(--border)] mb-3 bg-black/5">
-                  <svg className="absolute w-full h-full -rotate-90" viewBox="0 0 36 36">
-                    <path
-                      className="text-slate-200 dark:text-white/5"
-                      strokeWidth="2.5"
-                      stroke="currentColor"
-                      fill="none"
-                      d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                <div className="w-full space-y-3">
+                  <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[var(--btn-sec-bg)] border theme-border">
+                    <Upload className="w-4 h-4 text-indigo-400 shrink-0" />
+                    <input
+                      ref={resumeInputRef}
+                      type="file"
+                      accept=".pdf"
+                      onChange={(e) => setResumeFile(e.target.files?.[0] || null)}
+                      className="w-full text-[11px] theme-text-secondary file:mr-3 file:rounded-lg file:border-0 file:bg-indigo-600 file:px-3 file:py-1.5 file:text-white file:text-[11px] file:font-semibold"
                     />
-                    <path
-                      className="text-indigo-600 dark:text-indigo-400"
-                      strokeWidth="2.5"
-                      strokeDasharray="78, 100"
-                      strokeLinecap="round"
-                      stroke="currentColor"
-                      fill="none"
-                      d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                    />
-                  </svg>
-                  <span className="text-lg text-indigo-600 dark:text-indigo-300 font-extrabold">78%</span>
+                  </div>
+
+                  <div className="flex flex-col items-center justify-center rounded-2xl border border-[var(--border)] bg-black/5 py-4">
+                    <div className="relative w-24 h-24 flex items-center justify-center rounded-full border-4 border-[var(--border)] mb-3 bg-black/5">
+                      <svg className="absolute w-full h-full -rotate-90" viewBox="0 0 36 36">
+                        <path
+                          className="text-slate-200 dark:text-white/5"
+                          strokeWidth="2.5"
+                          stroke="currentColor"
+                          fill="none"
+                          d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                        />
+                        <path
+                          className="text-indigo-600 dark:text-indigo-400"
+                          strokeWidth="2.5"
+                          strokeDasharray="78, 100"
+                          strokeLinecap="round"
+                          stroke="currentColor"
+                          fill="none"
+                          d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                        />
+                      </svg>
+                      <span className="text-lg text-indigo-600 dark:text-indigo-300 font-extrabold">78%</span>
+                    </div>
+                    <p className="text-[11px] theme-text-secondary text-center px-2">
+                      Upload a resume to generate an ATS score.
+                    </p>
+                    {resumeFile && (
+                      <p className="mt-2 flex items-center gap-1.5 text-[11px] theme-text-primary font-semibold px-3">
+                        <FileText className="w-3.5 h-3.5 text-indigo-400" />
+                        {resumeFile.name}
+                      </p>
+                    )}
+                  </div>
                 </div>
-                <p className="text-[11px] theme-text-secondary text-center px-2">
-                  Powered by Gemini AI analysis.
-                </p>
               </div>
 
-              <button className="w-full mt-2 py-2 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold hover:shadow-lg hover:shadow-indigo-600/10 transition-all duration-200">
-                Boost Score
+              <button
+                onClick={handleResumeAnalyze}
+                disabled={analyzingResume}
+                className="w-full mt-2 py-2 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold hover:shadow-lg hover:shadow-indigo-600/10 transition-all duration-200"
+              >
+                {analyzingResume ? (
+                  <span className="inline-flex items-center gap-2">
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    Analyzing...
+                  </span>
+                ) : (
+                  'Boost Score'
+                )}
               </button>
             </div>
 
