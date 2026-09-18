@@ -7,6 +7,12 @@ import PDFDocument from 'pdfkit'
 import fs from 'fs';
 import { createRequire } from 'module';
 const require = createRequire(import.meta.url);
+
+// Polyfills for pdf-parse in Vercel serverless environment
+global.DOMMatrix = global.DOMMatrix || class DOMMatrix {};
+global.ImageData = global.ImageData || class ImageData {};
+global.Path2D = global.Path2D || class Path2D {};
+
 const pdfParse = require('pdf-parse');
 import ConnectionRequest from '../models/connectionModel.js'
 import Job from '../models/jobModel.js'
