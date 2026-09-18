@@ -24,12 +24,18 @@ app.use(userRoutes);
 app.use(postRoutes);
 app.use(jobRoutes);
 
-const start = async () => {
-    await mongoose.connect(process.env.MONGO_URI);
+// Connect to MongoDB
+mongoose.connect(process.env.MONGO_URI)
+    .then(() => console.log('Connected to MongoDB'))
+    .catch((err) => console.error('MongoDB connection error:', err));
+
+// Only start the server locally (Vercel will use the exported app)
+if (process.env.NODE_ENV !== 'production') {
     const PORT = process.env.PORT || 9090;
     app.listen(PORT, () => {
         console.log(`Server running on port ${PORT}`);
     });
-};
+}
 
-start();
+// Export the Express API for Vercel
+export default app;
