@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAppSelector } from '../../store/hooks';
+import { useAppSelector, useAppDispatch } from '../../store/hooks';
+import { setJobs } from '../../store/jobSlice';
 import { api } from '../../utils/api';
 import {
   Briefcase,
@@ -34,9 +35,10 @@ function getInitials(name: string): string {
 
 export default function JobsPage() {
   const { user } = useAppSelector((state) => state.auth);
+  const jobs = useAppSelector((state) => state.jobs.jobs);
+  const dispatch = useAppDispatch();
   const router = useRouter();
 
-  const [jobs, setJobs] = useState<any[]>([]);
   const [selectedJob, setSelectedJob] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [actionInProgress, setActionInProgress] = useState<string | null>(null);
@@ -77,18 +79,18 @@ export default function JobsPage() {
   const [formRequirements, setFormRequirements] = useState('');
 
   const fetchJobs = async (selectFirst = false) => {
-    setLoading(true);
+    if (jobs.length === 0) {
+      setLoading(true);
+    }
     try {
       const res = await api.getJobs();
       if (res && Array.isArray(res.jobs)) {
-        setJobs(res.jobs);
+        dispatch(setJobs(res.jobs));
         
-        // Select the first job by default if list is not empty, or keep current selection if it exists
         if (res.jobs.length > 0) {
           if (selectFirst) {
             setSelectedJob(res.jobs[0]);
           } else {
-            // Re-sync currently selected job if it exists in the fetched list
             const currentSelected = selectedJob 
               ? res.jobs.find((j: any) => j._id === selectedJob._id) 
               : null;
@@ -99,7 +101,7 @@ export default function JobsPage() {
         }
       }
     } catch {
-      toast.error('Failed to load jobs.');
+      if (jobs.length === 0) toast.error('Failed to load jobs.');
     } finally {
       setLoading(false);
     }
@@ -565,6 +567,7 @@ export default function JobsPage() {
                                   src={selectedJob.postedBy.profilePicture}
                                   alt={selectedJob.postedBy.name}
                                   className="w-8 h-8 rounded-full object-cover border border-white/10"
+                                  loading="lazy"
                                 />
                               ) : (
                                 <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center text-white text-[11px] font-bold border border-white/10">
@@ -806,6 +809,7 @@ export default function JobsPage() {
                                             src={applicant.profilePicture}
                                             alt={applicant.name}
                                             className="w-10 h-10 rounded-full object-cover border border-[var(--border)]"
+                                            loading="lazy"
                                           />
                                         ) : (
                                           <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center text-white text-xs font-bold border border-[var(--border)] select-none">

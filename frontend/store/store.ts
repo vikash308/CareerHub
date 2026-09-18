@@ -3,6 +3,7 @@ import authReducer from './authSlice';
 import postReducer from './postSlice';
 import profileReducer from './profileSlice';
 import connectionReducer from './connectionSlice';
+import jobReducer from './jobSlice';
 
 export const store = configureStore({
   reducer: {
@@ -10,6 +11,7 @@ export const store = configureStore({
     posts: postReducer,
     profile: profileReducer,
     connections: connectionReducer,
+    jobs: jobReducer,
   },
 });
 

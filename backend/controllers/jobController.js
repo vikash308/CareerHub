@@ -50,7 +50,9 @@ export const getAllJobs = async (req, res) => {
         const jobs = await Job.find()
             .populate('postedBy', 'name username profilePicture')
             .populate('applicants', 'name username profilePicture')
-            .sort({ createdAt: -1 });
+            .sort({ createdAt: -1 })
+            .limit(50)
+            .lean();
         return res.json({ jobs });
     } catch (error) {
         return res.status(500).json({ message: error.message });

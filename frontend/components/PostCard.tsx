@@ -127,6 +127,7 @@ export default function PostCard({ post, animationDelay = 0 }: PostCardProps) {
               src={post.userId.profilePicture}
               alt={post.userId.name}
               className="w-11 h-11 rounded-full object-cover border border-[var(--border)]"
+              loading="lazy"
             />
           ) : (
             <div className="w-11 h-11 rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center text-white text-xs font-bold border border-[var(--border)] select-none">
@@ -181,7 +182,7 @@ export default function PostCard({ post, animationDelay = 0 }: PostCardProps) {
            (mediaUrl && mediaUrl.includes('/video/upload/')) ? (
             <video src={mediaUrl} controls className="w-full max-h-80 object-contain" />
           ) : (
-            <img src={mediaUrl} alt="Post media" className="w-full object-contain max-h-80" />
+            <img src={mediaUrl} alt="Post media" className="w-full object-contain max-h-80" loading="lazy" />
           )}
         </div>
       )}

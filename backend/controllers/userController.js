@@ -424,7 +424,8 @@ export const updateProfileData = async (req, res) => {
 
 export const getAllUserProfile = async (req, res) => {
     try {
-        const profiles = await Profile.find().populate('userId', 'name username email profilePicture')
+        const profiles = await Profile.find().sort({ _id: -1 }).limit(50).populate('userId', 'name username email profilePicture').lean();
+
 
         return res.json({ profiles })
     } catch (error) {

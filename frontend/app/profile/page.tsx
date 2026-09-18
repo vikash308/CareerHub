@@ -711,6 +711,7 @@ export function ProfileContent() {
                           src={profileUser?.profilePicture || user?.profilePicture}
                           alt={profileUser?.name || user?.name}
                           className="w-24 h-24 sm:w-28 sm:h-28 rounded-full object-cover border-4 border-[var(--background)] shadow-2xl"
+                          loading="lazy"
                         />
                       ) : (
                         <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center text-white text-3xl font-bold border-4 border-[var(--background)] shadow-2xl select-none">
@@ -1123,6 +1124,7 @@ export function ProfileContent() {
                                 src={post.media}
                                 alt="Post media"
                                 className="w-full h-full object-cover"
+                                loading="lazy"
                               />
                             )}
                           </div>

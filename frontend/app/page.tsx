@@ -33,7 +33,9 @@ export default function FeedPage() {
   const resumeInputRef = useRef<HTMLInputElement>(null);
 
   const fetchPosts = async () => {
-    setIsLoading(true);
+    if (posts.length === 0) {
+      setIsLoading(true);
+    }
     setFetchError(null);
     try {
       const data = await api.getAllPosts();
@@ -42,18 +44,20 @@ export default function FeedPage() {
           (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
         );
         dispatch(setPosts(sorted));
-      } else {
+      } else if (posts.length === 0) {
         setFetchError('Could not load posts. The backend may be offline.');
       }
     } catch {
-      setFetchError('Network error. Is the backend server running?');
+      if (posts.length === 0) setFetchError('Network error. Is the backend server running?');
     } finally {
       setIsLoading(false);
     }
   };
 
   const fetchSuggestions = async () => {
-    setLoadingSuggestions(true);
+    if (recommendations.length === 0) {
+      setLoadingSuggestions(true);
+    }
     try {
       const data = await api.getAllUserProfiles();
       if (data && Array.isArray(data.profiles)) {

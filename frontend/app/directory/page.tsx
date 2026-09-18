@@ -2,7 +2,9 @@
 
 import { useEffect, useState, useTransition } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useAppSelector } from '../../store/hooks';
+import { useAppSelector, useAppDispatch } from '../../store/hooks';
+import { setProfiles } from '../../store/profileSlice';
+import { setSentRequests, setIncomingRequests } from '../../store/connectionSlice';
 import { api } from '../../utils/api';
 import {
   Users,
@@ -33,12 +35,12 @@ function getInitials(name: string): string {
 
 export default function DirectoryPage() {
   const { user } = useAppSelector((state) => state.auth);
+  const profiles = useAppSelector((state) => state.profile.profiles);
+  const incomingRequests = useAppSelector((state) => state.connections.incomingRequests);
+  const sentRequests = useAppSelector((state) => state.connections.sentRequests);
+  const dispatch = useAppDispatch();
   const router = useRouter();
   const searchParams = useSearchParams();
-
-  const [profiles, setProfiles] = useState<any[]>([]);
-  const [incomingRequests, setIncomingRequests] = useState<any[]>([]);
-  const [sentRequests, setSentRequests] = useState<any[]>([]);
   
   const [loading, setLoading] = useState(true);
   const [actionInProgress, setActionInProgress] = useState<string | null>(null);
@@ -57,29 +59,31 @@ export default function DirectoryPage() {
   }, [searchParams]);
 
   const fetchData = async () => {
-    setLoading(true);
+    if (profiles.length === 0) {
+      setLoading(true);
+    }
     try {
       // 1. Get all profiles
       const profilesRes = await api.getAllUserProfiles();
       if (profilesRes && Array.isArray(profilesRes.profiles)) {
-        setProfiles(profilesRes.profiles);
+        dispatch(setProfiles(profilesRes.profiles));
       }
 
       if (user) {
         // 2. Get incoming requests
         const incomingRes = await api.getIncomingRequests();
         if (Array.isArray(incomingRes)) {
-          setIncomingRequests(incomingRes);
+          dispatch(setIncomingRequests(incomingRes));
         }
 
         // 3. Get sent requests
         const sentRes = await api.getSentRequests();
         if (sentRes && Array.isArray(sentRes.connections)) {
-          setSentRequests(sentRes.connections);
+          dispatch(setSentRequests(sentRes.connections));
         }
       }
     } catch (error) {
-      toast.error('Failed to load directory data.');
+      if (profiles.length === 0) toast.error('Failed to load directory data.');
     } finally {
       setLoading(false);
     }
@@ -104,7 +108,7 @@ export default function DirectoryPage() {
         // Refresh sent requests
         const sentRes = await api.getSentRequests();
         if (sentRes && Array.isArray(sentRes.connections)) {
-          setSentRequests(sentRes.connections);
+          dispatch(setSentRequests(sentRes.connections));
         }
       } else {
         toast.error(res?.message || 'Failed to send connection request.');
@@ -129,11 +133,11 @@ export default function DirectoryPage() {
         // Refresh requests
         const incomingRes = await api.getIncomingRequests();
         if (Array.isArray(incomingRes)) {
-          setIncomingRequests(incomingRes);
+          dispatch(setIncomingRequests(incomingRes));
         }
         const sentRes = await api.getSentRequests();
         if (sentRes && Array.isArray(sentRes.connections)) {
-          setSentRequests(sentRes.connections);
+          dispatch(setSentRequests(sentRes.connections));
         }
       } else {
         toast.error(res?.message || 'Failed to update request.');

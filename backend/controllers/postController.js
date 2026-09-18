@@ -56,17 +56,21 @@ export const createPost = async (req, res) => {
 
 export const getAllPosts = async (req,res) =>{
     try {
-        const posts = await Post.find().populate('userId', ' name username email profilePicture').lean();
+        const posts = await Post.find().sort({ createdAt: -1 }).limit(50).populate('userId', ' name username email profilePicture').lean();
         
-        const postsWithComments = await Promise.all(
-            posts.map(async (post) => {
-                const commentCount = await Comment.countDocuments({ postId: post._id });
-                return {
-                    ...post,
-                    commentCount
-                };
-            })
-        );
+        const postIds = posts.map(p => p._id);
+        const commentCounts = await Comment.aggregate([
+            { $match: { postId: { $in: postIds } } },
+            { $group: { _id: "$postId", count: { $sum: 1 } } }
+        ]);
+
+        const countMap = {};
+        commentCounts.forEach(c => { countMap[c._id.toString()] = c.count; });
+
+        const postsWithComments = posts.map(post => ({
+            ...post,
+            commentCount: countMap[post._id.toString()] || 0
+        }));
 
         return res.json({posts: postsWithComments});
     } catch (error) {

@@ -3,7 +3,8 @@ import mongoose from "mongoose";
 const postSchema = mongoose.Schema({
     userId :{
         type:mongoose.Schema.Types.ObjectId,
-        ref: "User"
+        ref: "User",
+        index: true
     },
     body:{
         type:String,
@@ -34,6 +35,8 @@ const postSchema = mongoose.Schema({
         default: ''
     }
 })
+
+postSchema.index({ createdAt: -1 });
 
 const Post = mongoose.model("Post", postSchema)
 export default Post;

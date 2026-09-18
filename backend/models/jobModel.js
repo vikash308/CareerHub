@@ -28,7 +28,8 @@ const jobSchema = new mongoose.Schema({
     postedBy: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
-        required: true
+        required: true,
+        index: true
     },
     applicants: [{
         type: mongoose.Schema.Types.ObjectId,
@@ -39,6 +40,8 @@ const jobSchema = new mongoose.Schema({
         default: Date.now
     }
 });
+
+jobSchema.index({ createdAt: -1 });
 
 const Job = mongoose.model("Job", jobSchema);
 
