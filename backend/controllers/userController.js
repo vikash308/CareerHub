@@ -5,7 +5,9 @@ import Profile from '../models/profileModel.js'
 import crypto from 'crypto'
 import PDFDocument from 'pdfkit'
 import fs from 'fs';
-import pdfParse from 'pdf-parse';
+import { createRequire } from 'module';
+const require = createRequire(import.meta.url);
+const pdfParse = require('pdf-parse');
 import ConnectionRequest from '../models/connectionModel.js'
 import Job from '../models/jobModel.js'
 import { createNotification } from './notificationController.js';
